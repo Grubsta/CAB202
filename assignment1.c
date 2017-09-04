@@ -16,6 +16,9 @@
 // Initialising Game state.
 bool game_over = false; /* Set this to true when game is over */
 bool update_screen = true; /* Set to false to prevent screen update. */
+double dx = 0;
+double dy = 0;
+double velocity = 0;
 int seconds = 0;
 int minutes = 0;
 int timeCounter = 0;
@@ -60,31 +63,25 @@ void drawArena(void) {
 
 // Platform entitys in game.
 sprite_id initPlatforms(double x1, double y1, double width) {
-  sprite_id platformSprite = sprite_create(x1, y1, 1, width, platformBase);
+  sprite_id platformSprite = sprite_create(x1, y1, width, 1, platformBase);
   return platformSprite;
 }
 
 // Draw platform/s.
 void DrawPlatforms() {
-  if (level == 1)
-    platform[0] = initPlatforms(0, round(screen_height()), round(screen_width()));
-    platform[1] = initPlatforms((screen_width() * 0.3), screen_height() - (1 + (HERO_HEIGHT * 3.5)), (screen_width() * 0.3));
-    sprite_draw(platform[0]), sprite_draw(platform[1]);
-  }
-  else if (level == 2) {
-    platform[0] = initPlatforms(0, screen_height(), screen_width());
-    platform[1] = initPlatforms((screen_width() * 0.4), screen_height() - (1 + (HERO_HEIGHT * 3.5)), (screen_width() * 0.3));
-    platform[2] = initPlatforms((screen_width() * 0.3), screen_height() - (2 + (HERO_HEIGHT * 7)), (screen_width() * 0.2));
-    sprite_draw(platform[0]), sprite_draw(platform[1]), sprite_draw(platform[2]);
-  }
-  else if (level == 3) {
-    return;
-  }
-  else if (level == 4) {
-    return;
-  }
-  else if (level == 5) {
-    return;
+  switch (level) {
+    case 1:
+      // level 1.
+      platform[0] = initPlatforms(0, round(screen_height()), round(screen_width()));
+      platform[1] = initPlatforms((screen_width() * 0.3), screen_height() - (1 + (HERO_HEIGHT * 3.5)), (screen_width() * 0.3));
+      sprite_draw(platform[0]), sprite_draw(platform[1]);
+      break;
+    case 2:
+      // level 1.
+      platform[0] = initPlatforms(0, screen_height(), screen_width());
+      platform[1] = initPlatforms((screen_width() * 0.4), screen_height() - (1 + (HERO_HEIGHT * 3.5)), (screen_width() * 0.3));
+      platform[2] = initPlatforms((screen_width() * 0.3), screen_height() - (2 + (HERO_HEIGHT * 7)), (screen_width() * 0.2));
+      sprite_draw(platform[0]), sprite_draw(platform[1]), sprite_draw(platform[2]);
   }
 }
 
@@ -145,30 +142,127 @@ void timer(void) {
 // }
 
 // Character movement
-void moveChar(void) {
-  // Get a character code user input.
-  int keypress = get_char();
-  // Integer coordinates of hero.
-  int heroX = round(sprite_x(hero));
-  int heroY = round(sprite_y(hero));
-  // Jump the hero.
-  if ((keypress == KEY_UP) && heroY > 10 ) sprite_move(hero, 0, -5);
-  // Move hero left.
-  if ((keypress == KEY_LEFT) && heroX > 1 ) sprite_move(hero, -1, 0);
-  // Move hero right.
-  if ((keypress == KEY_RIGHT) && heroX < width - sprite_width(hero) - 2) sprite_move(hero, +1, 0);
+// void moveChar(void) {
+//   // Get a character code user input.
+//   int keypress = get_char();
+//   // Integer coordinates of hero.
+//   int heroX = round(sprite_x(hero));
+//   int heroY = round(sprite_y(hero));
+//   // Jump the hero.
+//   if ((keypress == KEY_UP) && heroY > 10 ) sprite_move(hero, 0, -5);
+//   // Move hero left.
+//   if ((keypress == KEY_LEFT) && heroX > 1 ) sprite_move(hero, -1, 0);
+//   // Move hero right.
+//   if ((keypress == KEY_RIGHT) && heroX < width - sprite_width(hero) - 2) sprite_move(hero, +1, 0);
+// }
+
+//check the keys
+void moveChar(void){
+  int key = get_char();
+  if (wallCollision(hero)) {
+    dx = 0;
+    velocity = 0;
+    sprite_back(hero);
+
+  }
+  if ( key == 'l') level ++;
+  else{
+    if (air == false){
+      if (key == KEY_UP){
+          air = true;
+          dy = -2;
+
+      }
+      //check right arrrow key
+      if ( key == KEY_RIGHT ){
+        if (right == true){
+          velocity = 1;
+
+        }
+        else if (left == true && velocity == 1){
+          velocity = 0.5;
+
+        }
+        else if (left == true && velocity == 0.5){
+          left = false;
+          right = false;
+          velocity = 0;
+
+        }
+        else {
+          left = false;
+          right = true;
+          velocity = 0.5;
+
+        }
+        if (velocity != 0 ){
+          dx = velocity * 1;
+
+        }
+        else {
+          dx = 0;
+
+        }
+      }
+      //check left arrow key
+      else if ( key == KEY_LEFT ){
+        if (left == true){
+          left = true;
+          right = false;
+          velocity = 1;
+
+        }
+        else if (right == true && velocity == 1){
+          velocity = 0.5;
+
+        }
+        else if (right == true && velocity == 0.5){
+          left = false;
+          right = false;
+          velocity = 0;
+
+        }
+        else {
+          left = true;
+          right = false;
+          velocity = 0.5;
+
+        }
+        if (velocity != 0 ){
+          dx = velocity * -1;
+
+        }
+        else {
+            dx = 0;
+
+        }
+      }
+    }
+  }
+}
+
+// Check wall collision
+bool wallCollision(sprite_id sprite){
+    int spriteLeft = sprite_x(sprite);
+    int spriteRight = sprite_x(sprite) + sprite_width(sprite) - 1;
+// Return true if collision is detected
+    if (s1_right > screen_width() - 2 || s1_left < 1) {
+        return true;
+    }
+		else {
+    		return false;
+		}
 }
 
 // Play one turn of game.
 void process(void) {
-	int width = screen_width(), height = screen_height();
+  // Character movement.
   moveChar();
-
-  // Collision detection.
-  // if (spriteCollision(hero, platform)) sprite_move(hero, +1, 0);
-
+  sprite_turn_to(hero, dx, dy);
+  sprite_step(hero);
   // Clear current Frame & then redraw.
   clear_screen();
+  // Create game
   drawGame();
   // Display Screen.
   show_screen();
