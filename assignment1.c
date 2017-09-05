@@ -67,20 +67,21 @@ void DrawPlatforms() {
   switch (level) {
     case 1:
       // level 1.
-      platform[0] = initPlatforms(0, screen_height() - 1, screen_width()); sprite_draw(platform[0]);
-      platform[1] = initPlatforms((screen_width() * 0.3), screen_height() - (1 + (HERO_HEIGHT * 3.5)), (screen_width() * 0.3)); sprite_draw(platform[1]);
+      platform[0] = initPlatforms(0, screen_height() - 1, screen_width());
+      platform[1] = initPlatforms((screen_width() * 0.3), screen_height() - (1 + (HERO_HEIGHT * 3.5)), (screen_width() * 0.3));
+      sprite_draw(platform[0]); sprite_draw(platform[1]); break;
     case 2:
       // level 2.
       platform[0] = initPlatforms(0, screen_height(), screen_width());
       platform[1] = initPlatforms((screen_width() * 0.4), screen_height() - (1 + (HERO_HEIGHT * 3.5)), (screen_width() * 0.3));
       platform[2] = initPlatforms((screen_width() * 0.3), screen_height() - (2 + (HERO_HEIGHT * 7)), (screen_width() * 0.2));
-      sprite_draw(platform[0]); sprite_draw(platform[1]); sprite_draw(platform[2]);
+      sprite_draw(platform[0]); sprite_draw(platform[1]); sprite_draw(platform[2]); break;
     case 3:
       // level 3.
       platform[0] = initPlatforms(0, screen_height(), screen_width());
       platform[1] = initPlatforms((screen_width() * 0.4), screen_height() - (1 + (HERO_HEIGHT * 3.5)), (screen_width() * 0.3));
       platform[2] = initPlatforms((screen_width() * 0.3), screen_height() - (2 + (HERO_HEIGHT * 7)), (screen_width() * 0.2));
-      sprite_draw(platform[0]); sprite_draw(platform[1]); sprite_draw(platform[2]);
+      sprite_draw(platform[0]); sprite_draw(platform[1]); sprite_draw(platform[2]); break;
   }
 }
 
@@ -97,7 +98,7 @@ bool spriteCollision(sprite_id sprite1, sprite_id sprite2) {
   int sprite2Left = sprite_x(sprite2);
   int sprite2Right = sprite_x(sprite2) + sprite_width(sprite2) - 1;
   // Collision occurance will output false.
-  if (sprite1Bottom + 2 < sprite2Top || sprite1Top > sprite2Bottom || sprite1Bottom < sprite2Top && sprite1Right < sprite2Left
+  if (sprite1Bottom < sprite2Top || sprite1Top > sprite2Bottom || sprite1Bottom < sprite2Top && sprite1Right < sprite2Left
     ||  sprite1Top > sprite2Bottom && sprite1Left > sprite2Right) {
     return false;
   }
@@ -128,8 +129,14 @@ void moveChar(void){
     dx = 0;
     velocity = 0;
     sprite_back(hero);
-
   }
+  else if (air == true && spriteCollision(hero, platform[0])){
+    air = false;
+    collision == true;
+    dy = 0;
+    sprite_back(hero);
+  }
+  else if (air == true) dy += gravity;
   else{
     if (air == false){
       if (key == KEY_UP){
@@ -145,13 +152,14 @@ void moveChar(void){
           left = false;
           right = false;
           velocity = 0;
+
         }
         else {
           left = false;
           right = true;
           velocity = 0.5;
-        }
 
+        }
         if (velocity != 0 ){
           dx = velocity;
 
@@ -195,18 +203,19 @@ void moveChar(void){
         }
       }
     }
-    // if (air == true && collision == false) {
-      // for (int i = 0; i <= 10; i++)
-      // {
-      //   if (spriteCollision(hero, platform[i])) {
-      //     air = false;
-      //     collision == true;
-      //     dy = 0;
-      //   }
-      if (air == true) dy += gravity;
-      }
+  }
+  // for (int i = 0; i <= 10; i++){
+  //   if (spriteCollision(hero, platform[i])) {
+  //       air = false;
+  //       collision == true;
+  //       dy = 0;
+  //       sprite_back(hero);
+  //   }
+  //   else ()
+  // }
+  // if (air == true) dy += gravity;
+}
 
-    }
 
   // Draws components of game.
   void drawGame(void) {
