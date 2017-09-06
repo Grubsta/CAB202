@@ -11,6 +11,7 @@
 #define HERO_HEIGHT (3)
 #define ZOMBIE_WIDTH (4)
 #define ZOMBIE_HEIGHT (4)
+#define PLATFORM_HEIGHT (1)
 
 // Initialising game variables.
 bool game_over = false;
@@ -128,10 +129,10 @@ bool xCollision(sprite_id sprite1, sprite_id sprite2){
 // Y-value collision detection.
 bool yCollision(sprite_id sprite1, sprite_id sprite2){
   // Sprite 1.
-  sprite1Bottom = round(sprite_y(sprite1)) + 2;
+  sprite1Bottom = round(sprite_y(sprite1)) + HERO_HEIGHT;
   sprite1Top = round(sprite_y(sprite1));
   // Sprite 2.
-  sprite2Bottom = round(sprite_y(sprite2));
+  sprite2Bottom = round(sprite_y(sprite2)); // stops head from glitching
   sprite2Top = round(sprite_y(sprite2));
   // If collision with ground of platform.
   if (sprite1Bottom == sprite2Top) {
@@ -162,10 +163,9 @@ void moveChar(void){
           velocity = 0;
           sprite_back(hero);
         }
-        else if (ground ==  true){
+        else if (ground == true){
           dy = 0;
           air = false;
-          sprite_back(hero);
         }
       }
     }
@@ -176,10 +176,9 @@ void moveChar(void){
           velocity = 0;
           sprite_back(hero);
         }
-        else if(ground ==  true){
+        else if(ground == true){
           dy = 0;
           air = false;
-          sprite_back(hero);
       }
     }
   }
@@ -311,13 +310,19 @@ void display_debug_data() {
   draw_formatted(5, 8, "S2: bottom: %02d , top: %02d, right: %02d, left: %02d", sprite2Top, sprite2Bottom, sprite2Right, sprite2Left);
   draw_formatted(5, 9, "S1: bottom: %02d , top: %02d, right: %02d, left: %02d", sprite1Top, sprite1Bottom, sprite1Right, sprite1Left);
 
-  if (ground == true) draw_string(50, 5, "Player colliding with ground");
-  else draw_string(50, 5, "Player is off ground");
+  if (xCollision(hero, platform[0]) == true && yCollision(hero, platform[0]) == true) draw_string(50, 3, "Collision detected (X & Y)");
+  else if (xCollision(hero, platform[0])) draw_string(50, 3, "Collision detected (X)");
+  else if (yCollision(hero, platform[0])) draw_string(50, 3, "Collision detected (Y)");
 
-  if (roof == true) draw_string(50, 4, "Player colliding with roof");
+  else draw_string(50, 5, "off ground");
+
+  if (ground == true) draw_string(50, 5, "colliding with ground");
+  else draw_string(50, 5, "off ground");
+
+  if (roof == true) draw_string(50, 4, "colliding with roof");
   else draw_string(50, 4, "not colliding with roof");
 
-  if (air == true) draw_string(50, 6, "Player is jumping");
+  if (air == true) draw_string(50, 6, "jumping");
   else draw_string(50, 6, "not jumping");
 
 }
