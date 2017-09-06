@@ -13,8 +13,8 @@
 #define ZOMBIE_HEIGHT (4)
 
 // Initialising game variables.
-bool game_over = false; /* Set this to true when game is over */
-bool update_screen = true; /* Set to false to prevent screen update. */
+bool game_over = false;
+bool update_screen = true;
 bool right = false;
 bool left = false;
 bool air = false;
@@ -45,7 +45,7 @@ int sprite2Top;
 int sprite2Left;
 int sprite2Right;
 
-// Declaring interactive charcters.
+// Declaring interactive sprites/ characters.
 char * charGround =
 /**/	" o "
 /**/	"/|\\"
@@ -58,7 +58,7 @@ char * lvlOneEnemy =
 /**/	"ZZZZ";
 
 char * platformBase =
-/**/ "========================================================================================================================";
+/**/ "==========================================================================================================================";
 
 // Declaring sprites.
 sprite_id hero; sprite_id enemy; sprite_id platform[10];
@@ -99,58 +99,6 @@ void DrawPlatforms() {
   }
 }
 
-// Collision between charcter and platform.
-bool spriteCollision(sprite_id sprite1, sprite_id sprite2) {
-  // Get perimiter values of sprites.
-  int sprite1Bottom = sprite_y(sprite1) + 1;
-  int sprite1Top = sprite_y(sprite1);
-  int sprite1Left = sprite_x(sprite1);
-  int sprite1Right = sprite_x(sprite1) + sprite_width(sprite1) - 1;
-  //sprite 2
-  // int sprite2Bottom = sprite_y(sprite2) + 1;
-  // int sprite2Top = sprite_y(sprite2);
-  // int sprite2Left = sprite_x(sprite2);
-  // int sprite2Right = sprite_x(sprite2) + sprite_width(sprite2) - 1;
-  int sprite2Bottom = sprite_y(sprite2) + 1;
-  int sprite2Top = sprite_y(sprite2);
-  int sprite2Left = sprite_x(sprite2);
-  int sprite2Right = sprite_x(sprite2) + sprite_width(sprite2) - 1;
-  // Collision occurance will output false.
-  if (sprite1Bottom < sprite2Top || sprite1Bottom < sprite2Top && sprite1Right < sprite2Left
-    ||  sprite1Top > sprite2Bottom && sprite1Left > sprite2Right) {
-    if  (sprite1Top > sprite2Bottom) topCollision = true;
-    return false;
-  }
-  else {
-    return true;
-  }
-}
-
-bool xCollision(sprite_id sprite1, sprite_id sprite2){
-  sprite1Left = sprite_x(sprite1);
-  sprite1Right = sprite_x(sprite1) + sprite_width(sprite1) - 1;
-  sprite2Left = sprite_x(sprite2);
-  sprite2Right = sprite_x(sprite2) + sprite_width(sprite2) - 1;
-  if (sprite1Left <= sprite2Right + 1 && sprite1Right >= sprite2Left - 1) return true;
-  else return false;
-}
-
-bool yCollision(sprite_id sprite1, sprite_id sprite2){
-  sprite1Bottom = sprite_y(sprite1);
-  sprite1Top = sprite_y(sprite1);
-  sprite2Bottom = sprite_y(sprite2);
-  sprite2Top = sprite_y(sprite2);
-  if (sprite1Bottom == sprite2Top - 1) {
-    roof = false; ground = true; return true;
-  }
-  else if (sprite1Top == sprite2Bottom + 1) {
-    roof = true; ground = false; return true;
-  }
-  else {
-    roof = false; ground = false; return false;
-  }
-}
-
 // Wall collision detection.
 bool wallCollision(sprite_id sprite){
   int spriteLeft = sprite_x(sprite);
@@ -164,40 +112,61 @@ bool wallCollision(sprite_id sprite){
 	}
 }
 
+// X-value collision detection.
+bool xCollision(sprite_id sprite1, sprite_id sprite2){
+  // Sprite 1.
+  sprite1Left = sprite_x(sprite1);
+  sprite1Right = sprite_x(sprite1) + sprite_width(sprite1);
+  // Sprite 2.
+  sprite2Left = sprite_x(sprite2);
+  sprite2Right = sprite_x(sprite2) + sprite_width(sprite2);
+  // If collision is occuring.
+  if (sprite1Left <= sprite2Right + 1 && sprite1Right >= sprite2Left - 1) return true;
+  else return false; // Else return no collision.
+}
+
+// Y-value collision detection.
+bool yCollision(sprite_id sprite1, sprite_id sprite2){
+  // Sprite 1.
+  sprite1Bottom = round(sprite_y(sprite1)) + 2;
+  sprite1Top = round(sprite_y(sprite1));
+  // Sprite 2.
+  sprite2Bottom = round(sprite_y(sprite2));
+  sprite2Top = round(sprite_y(sprite2));
+  // If collision with ground of platform.
+  if (sprite1Bottom == sprite2Top) {
+    roof = false; ground = true; return true;
+  }
+  // If collision with bottom of platform.
+  else if (sprite1Top == sprite2Bottom) {
+    roof = true; ground = false; return true;
+  }
+  //
+  else {
+    roof = false; ground = false; return false;
+  }
+}
+
 //check the keys
 void moveChar(void){
   // User input.
   int key = get_char();
   // Level indicator.
   if (key == 'l') level ++;
-  // Checking each platform on level.
-  // for (int i = 0; i < platformAmount; i++) {
-  //   // i screws with collision halfway through platform.
-  //   if (spriteCollision(hero, platform[i])) {
-  //     if (topCollision == true) {
-  //       dy = 0;
-  //       velocity = 0;
-  //       topCollision = false;
-  //       sprite_back(hero);
-  //     }
-  //   }
-  // }
-  // If hero collides with wall.
-
+  // Collision checks between platform/s and hero.
   // for (int i = 0; i <= platformAmount; i++){
   if (xCollision(hero, platform[0])){
-      if (yCollision(hero, platform[0])){
-        if(roof == true){
+    if (yCollision(hero, platform[0])){
+        if (roof == true){
           dy += gravity;
           velocity = 0;
           sprite_back(hero);
         }
-        else if(ground ==  true){
+        else if (ground ==  true){
           dy = 0;
           air = false;
           sprite_back(hero);
         }
-        // else sprite_back(hero);
       }
     }
   if (xCollision(hero, platform[1])){
@@ -205,31 +174,21 @@ void moveChar(void){
         if(roof == true){
           dy += gravity;
           velocity = 0;
+          sprite_back(hero);
         }
         else if(ground ==  true){
           dy = 0;
           air = false;
           sprite_back(hero);
-        // }
       }
     }
   }
+  if (ground == false && roof == false) dy += gravity;
   if (wallCollision(hero)) {
     dx = 0;
     velocity = 0;
     sprite_back(hero);
   }
-  // If the characters head hits platform.
-  // else if (topCollision == true) dy += gravity;
-  // // If character is in air and has collided.
-  // else if (air == true && spriteCollision(hero, platform[0])){
-  //   air = false;
-  //   collision == true;
-  //   dy = 0;
-  //   sprite_back(hero);
-  // }
-  // If no collisions occur but char in air increase gravity.
-  else if (air == true) dy += gravity;
   // Else, continue with user controls.
   else{
     if (air == false){
@@ -301,15 +260,15 @@ void moveChar(void){
 }
 
 
-  // Draws components of game.
-  void drawGame(void) {
+// Draws components of game.
+void drawGame(void) {
   	drawArena();
     DrawPlatforms();
   	sprite_draw(hero);
   }
 
-  // Game hud.
-  void gameHud(void) {
+// Game hud.
+void gameHud(void) {
     int width = screen_width() / 4;
     draw_formatted(2, 1, "Time: %02d:%02d", minutes, seconds);
     draw_formatted(width, 1, "Lives: %d", lives);
@@ -317,62 +276,63 @@ void moveChar(void){
     draw_formatted(width * 3, 1, "Score: %d", score);
   }
 
-  // Initialise Timer
-  void timer(void) {
-  	timeCounter++;
-  	if (timeCounter == 100) {
-  		seconds++;
-  		levelTime++;
-  		timeCounter = 0;
-  		if (seconds == 60) {
-  			seconds = 0;
-  			minutes++;
-        if (minutes == 100) {
-          game_over = true;
-        }
-  		}
-  	}
-  }
+// Initialise Timer
+void timer(void) {
+  timeCounter++;
+	if (timeCounter == 100) {
+		seconds++;
+		levelTime++;
+		timeCounter = 0;
+		if (seconds == 60) {
+			seconds = 0;
+			minutes++;
+      if (minutes == 100) {
+        game_over = true;
+      }
+		}
+	}
+}
 
 // Prints Debug information to screen.
 void display_debug_data() {
-    double dx = sprite_dx(hero);
-    double dy = sprite_dy(hero);
-    int x = sprite_x(hero);
-    int y = sprite_y(hero);
-    draw_string(5,3, "Debug Data");
-    draw_string(5,4, "Player dx: ");
-    draw_double(20, 4, dx);
-    draw_string(5,5, "Player dy: ");
-    draw_double(20, 5, dy);
-    draw_string(5,6, "Player X pos: ");
-    draw_int(20, 6, x);
-    draw_string(5,7, "Player Y pos: ");
-    draw_int(20, 7, y);
-    draw_formatted(5, 8, "S2: bottom: %02d , top: %02d, right: %02d, left: %02d", sprite2Top, sprite2Bottom, sprite2Right, sprite2Left);
-    draw_formatted(5, 9, "S1: bottom: %02d , top: %02d, right: %02d, left: %02d", sprite1Top, sprite1Bottom, sprite1Right, sprite1Left);
-    if (ground == false) {
-     draw_string(50, 5, "Player colliding with ground");
-   } else {
-     draw_string(50, 5, "Player is off ground");
-   }
-   if (air == true) {
-       draw_string(50, 6, "Player is jumping");
-   } else {
-       draw_string(50, 6, "Player is not jumping");
-   }
-  }
+  double dx = sprite_dx(hero);
+  double dy = sprite_dy(hero);
+  int x = sprite_x(hero);
+  int y = sprite_y(hero);
+  draw_string(5,3, "Debug Data");
+  draw_string(5,4, "Player dx: ");
+  draw_double(20, 4, dx);
+  draw_string(5,5, "Player dy: ");
+  draw_double(20, 5, dy);
+  draw_string(5,6, "Player X pos: ");
+  draw_int(20, 6, x);
+  draw_string(5,7, "Player Y pos: ");
+  draw_int(20, 7, y);
+  draw_formatted(5, 8, "S2: bottom: %02d , top: %02d, right: %02d, left: %02d", sprite2Top, sprite2Bottom, sprite2Right, sprite2Left);
+  draw_formatted(5, 9, "S1: bottom: %02d , top: %02d, right: %02d, left: %02d", sprite1Top, sprite1Bottom, sprite1Right, sprite1Left);
+
+  if (ground == true) draw_string(50, 5, "Player colliding with ground");
+  else draw_string(50, 5, "Player is off ground");
+
+  if (roof == true) draw_string(50, 4, "Player colliding with roof");
+  else draw_string(50, 4, "not colliding with roof");
+
+  if (air == true) draw_string(50, 6, "Player is jumping");
+  else draw_string(50, 6, "not jumping");
+
+}
 
 // Play one turn of game.
 void process(void) {
   // Clear current Frame & then redraw.
   clear_screen();
+  // Create game.
+  drawGame();
   // Character movement.
   moveChar();
   sprite_turn_to(hero, dx, round(dy));
   sprite_step(hero);
-  // Create game.
-  drawGame();
+
   // Debugger.
   display_debug_data();
 
