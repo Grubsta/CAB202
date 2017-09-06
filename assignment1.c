@@ -19,6 +19,9 @@ bool right = false;
 bool left = false;
 bool air = false;
 bool collision = true;
+bool topCollision = false;
+bool ground = false;
+bool roof = false;
 double dx = 0;
 double dy = 0;
 double velocity = 0;
@@ -30,6 +33,17 @@ int levelTime = 0;
 int score = 0;
 int level = 1;
 int lives = 10;
+int platformAmount = 1;
+
+int sprite1Bottom;
+int sprite1Top;
+int sprite1Left;
+int sprite1Right;
+
+int sprite2Bottom;
+int sprite2Top;
+int sprite2Left;
+int sprite2Right;
 
 // Declaring interactive charcters.
 char * charGround =
@@ -93,17 +107,47 @@ bool spriteCollision(sprite_id sprite1, sprite_id sprite2) {
   int sprite1Left = sprite_x(sprite1);
   int sprite1Right = sprite_x(sprite1) + sprite_width(sprite1) - 1;
   //sprite 2
+  // int sprite2Bottom = sprite_y(sprite2) + 1;
+  // int sprite2Top = sprite_y(sprite2);
+  // int sprite2Left = sprite_x(sprite2);
+  // int sprite2Right = sprite_x(sprite2) + sprite_width(sprite2) - 1;
   int sprite2Bottom = sprite_y(sprite2) + 1;
   int sprite2Top = sprite_y(sprite2);
   int sprite2Left = sprite_x(sprite2);
   int sprite2Right = sprite_x(sprite2) + sprite_width(sprite2) - 1;
   // Collision occurance will output false.
-  if (sprite1Bottom < sprite2Top || sprite1Top > sprite2Bottom || sprite1Bottom < sprite2Top && sprite1Right < sprite2Left
+  if (sprite1Bottom < sprite2Top || sprite1Bottom < sprite2Top && sprite1Right < sprite2Left
     ||  sprite1Top > sprite2Bottom && sprite1Left > sprite2Right) {
+    if  (sprite1Top > sprite2Bottom) topCollision = true;
     return false;
   }
   else {
     return true;
+  }
+}
+
+bool xCollision(sprite_id sprite1, sprite_id sprite2){
+  sprite1Left = sprite_x(sprite1);
+  sprite1Right = sprite_x(sprite1) + sprite_width(sprite1) - 1;
+  sprite2Left = sprite_x(sprite2);
+  sprite2Right = sprite_x(sprite2) + sprite_width(sprite2) - 1;
+  if (sprite1Left <= sprite2Right + 1 && sprite1Right >= sprite2Left - 1) return true;
+  else return false;
+}
+
+bool yCollision(sprite_id sprite1, sprite_id sprite2){
+  sprite1Bottom = sprite_y(sprite1);
+  sprite1Top = sprite_y(sprite1);
+  sprite2Bottom = sprite_y(sprite2);
+  sprite2Top = sprite_y(sprite2);
+  if (sprite1Bottom == sprite2Top - 1) {
+    roof = false; ground = true; return true;
+  }
+  else if (sprite1Top == sprite2Bottom + 1) {
+    roof = true; ground = false; return true;
+  }
+  else {
+    roof = false; ground = false; return false;
   }
 }
 
@@ -122,26 +166,76 @@ bool wallCollision(sprite_id sprite){
 
 //check the keys
 void moveChar(void){
+  // User input.
   int key = get_char();
+  // Level indicator.
   if (key == 'l') level ++;
-  //if (!spriteCollision(hero, platform)) collision = false;
+  // Checking each platform on level.
+  // for (int i = 0; i < platformAmount; i++) {
+  //   // i screws with collision halfway through platform.
+  //   if (spriteCollision(hero, platform[i])) {
+  //     if (topCollision == true) {
+  //       dy = 0;
+  //       velocity = 0;
+  //       topCollision = false;
+  //       sprite_back(hero);
+  //     }
+  //   }
+  // }
+  // If hero collides with wall.
+
+  // for (int i = 0; i <= platformAmount; i++){
+  if (xCollision(hero, platform[0])){
+      if (yCollision(hero, platform[0])){
+        if(roof == true){
+          dy += gravity;
+          velocity = 0;
+          sprite_back(hero);
+        }
+        else if(ground ==  true){
+          dy = 0;
+          air = false;
+          sprite_back(hero);
+        }
+        // else sprite_back(hero);
+      }
+    }
+  if (xCollision(hero, platform[1])){
+      if (yCollision(hero, platform[1])){
+        if(roof == true){
+          dy += gravity;
+          velocity = 0;
+        }
+        else if(ground ==  true){
+          dy = 0;
+          air = false;
+          sprite_back(hero);
+        // }
+      }
+    }
+  }
   if (wallCollision(hero)) {
     dx = 0;
     velocity = 0;
     sprite_back(hero);
   }
-  else if (air == true && spriteCollision(hero, platform[0])){
-    air = false;
-    collision == true;
-    dy = 0;
-    sprite_back(hero);
-  }
+  // If the characters head hits platform.
+  // else if (topCollision == true) dy += gravity;
+  // // If character is in air and has collided.
+  // else if (air == true && spriteCollision(hero, platform[0])){
+  //   air = false;
+  //   collision == true;
+  //   dy = 0;
+  //   sprite_back(hero);
+  // }
+  // If no collisions occur but char in air increase gravity.
   else if (air == true) dy += gravity;
+  // Else, continue with user controls.
   else{
     if (air == false){
       if (key == KEY_UP){
           air = true;
-          dy = -2;
+          dy = -1.7;
 
       }
       //check right arrrow key
@@ -204,16 +298,6 @@ void moveChar(void){
       }
     }
   }
-  // for (int i = 0; i <= 10; i++){
-  //   if (spriteCollision(hero, platform[i])) {
-  //       air = false;
-  //       collision == true;
-  //       dy = 0;
-  //       sprite_back(hero);
-  //   }
-  //   else ()
-  // }
-  // if (air == true) dy += gravity;
 }
 
 
@@ -250,18 +334,48 @@ void moveChar(void){
   	}
   }
 
+// Prints Debug information to screen.
+void display_debug_data() {
+    double dx = sprite_dx(hero);
+    double dy = sprite_dy(hero);
+    int x = sprite_x(hero);
+    int y = sprite_y(hero);
+    draw_string(5,3, "Debug Data");
+    draw_string(5,4, "Player dx: ");
+    draw_double(20, 4, dx);
+    draw_string(5,5, "Player dy: ");
+    draw_double(20, 5, dy);
+    draw_string(5,6, "Player X pos: ");
+    draw_int(20, 6, x);
+    draw_string(5,7, "Player Y pos: ");
+    draw_int(20, 7, y);
+    draw_formatted(5, 8, "S2: bottom: %02d , top: %02d, right: %02d, left: %02d", sprite2Top, sprite2Bottom, sprite2Right, sprite2Left);
+    draw_formatted(5, 9, "S1: bottom: %02d , top: %02d, right: %02d, left: %02d", sprite1Top, sprite1Bottom, sprite1Right, sprite1Left);
+    if (ground == false) {
+     draw_string(50, 5, "Player colliding with ground");
+   } else {
+     draw_string(50, 5, "Player is off ground");
+   }
+   if (air == true) {
+       draw_string(50, 6, "Player is jumping");
+   } else {
+       draw_string(50, 6, "Player is not jumping");
+   }
+  }
+
 // Play one turn of game.
 void process(void) {
   // Clear current Frame & then redraw.
   clear_screen();
   // Character movement.
   moveChar();
-  sprite_turn_to(hero, dx, dy);
+  sprite_turn_to(hero, dx, round(dy));
   sprite_step(hero);
-  // Create game
+  // Create game.
   drawGame();
-  // Display Screen.
-  show_screen();
+  // Debugger.
+  display_debug_data();
+
 }
 
 // Initial setup.
