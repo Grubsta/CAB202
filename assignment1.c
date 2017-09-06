@@ -134,12 +134,12 @@ bool yCollision(sprite_id sprite1, sprite_id sprite2){
   // Sprite 2.
   sprite2Bottom = round(sprite_y(sprite2)); // stops head from glitching
   sprite2Top = round(sprite_y(sprite2));
-  // If collision with ground of platform.
+  // If collision with top of platform.
   if (sprite1Bottom == sprite2Top) {
     roof = false; ground = true; return true;
   }
   // If collision with bottom of platform.
-  else if (sprite1Top == sprite2Bottom) {
+  else if (sprite1Top == sprite2Bottom + 1) {
     roof = true; ground = false; return true;
   }
   //
@@ -189,6 +189,11 @@ void moveChar(void){
     sprite_back(hero);
   }
   // Else, continue with user controls.
+  else if (sprite_y(hero) <= 3) {
+    dy += gravity;
+    velocity = 0;
+    sprite_back(hero);
+  }
   else{
     if (air == false){
       if (key == KEY_UP){
@@ -258,7 +263,6 @@ void moveChar(void){
   }
 }
 
-
 // Draws components of game.
 void drawGame(void) {
   	drawArena();
@@ -314,10 +318,8 @@ void display_debug_data() {
   else if (xCollision(hero, platform[0])) draw_string(50, 3, "Collision detected (X)");
   else if (yCollision(hero, platform[0])) draw_string(50, 3, "Collision detected (Y)");
 
-  else draw_string(50, 5, "off ground");
-
   if (ground == true) draw_string(50, 5, "colliding with ground");
-  else draw_string(50, 5, "off ground");
+  else draw_string(50, 5, "not colliding with roo ground");
 
   if (roof == true) draw_string(50, 4, "colliding with roof");
   else draw_string(50, 4, "not colliding with roof");
@@ -339,7 +341,7 @@ void process(void) {
   sprite_step(hero);
 
   // Debugger.
-  display_debug_data();
+  // display_debug_data();
 
 }
 
