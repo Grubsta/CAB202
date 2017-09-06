@@ -40,7 +40,6 @@ int sprite1Bottom;
 int sprite1Top;
 int sprite1Left;
 int sprite1Right;
-
 int sprite2Bottom;
 int sprite2Top;
 int sprite2Left;
@@ -61,8 +60,14 @@ char * lvlOneEnemy =
 char * platformBase =
 /**/ "==========================================================================================================================";
 
+char * exitImg =
+/**/ "EXIT"
+/**/ "|  |"
+/**/ "| .|"
+/**/ "|  |";
 // Declaring sprites.
 sprite_id hero; sprite_id enemy; sprite_id platform[10];
+// sprite_id door;
 
 // Windows main borders.
 void drawArena(void) {
@@ -155,9 +160,9 @@ void moveChar(void){
   // Level indicator.
   if (key == 'l') level ++;
   // Collision checks between platform/s and hero.
-  // for (int i = 0; i <= platformAmount; i++){
-  if (xCollision(hero, platform[0])){
-    if (yCollision(hero, platform[0])){
+  for (int i = 0; i <= platformAmount; i++){
+  if (xCollision(hero, platform[i])){
+    if (yCollision(hero, platform[i])){
         if (roof == true){
           dy += gravity;
           velocity = 0;
@@ -169,20 +174,22 @@ void moveChar(void){
         }
       }
     }
-  if (xCollision(hero, platform[1])){
-      if (yCollision(hero, platform[1])){
-        if(roof == true){
-          dy += gravity;
-          velocity = 0;
-          sprite_back(hero);
-        }
-        else if(ground == true){
-          dy = 0;
-          air = false;
-      }
-    }
   }
+  // if (xCollision(hero, platform[1])){
+  //     if (yCollision(hero, platform[1])){
+  //       if(roof == true){
+  //         dy += gravity;
+  //         velocity = 0;
+  //         sprite_back(hero);
+  //       }
+  //       else if(ground == true){
+  //         dy = 0;
+  //         air = false;
+  //     }
+  //   }
+  // }
   if (ground == false && roof == false) dy += gravity;
+  if (air == true);
   if (wallCollision(hero)) {
     dx = 0;
     velocity = 0;
@@ -263,10 +270,16 @@ void moveChar(void){
   }
 }
 
+// void createExit(void){
+//   door = sprite_create(screen_width() - 8, screen_height() - 5, 4, 4, exitImg);
+//   sprite_draw(door);
+//  }
+
 // Draws components of game.
 void drawGame(void) {
   	drawArena();
     DrawPlatforms();
+    // createExit();
   	sprite_draw(hero);
   }
 
@@ -311,15 +324,15 @@ void display_debug_data() {
   draw_int(20, 6, x);
   draw_string(5,7, "Player Y pos: ");
   draw_int(20, 7, y);
-  draw_formatted(5, 8, "S2: bottom: %02d , top: %02d, right: %02d, left: %02d", sprite2Top, sprite2Bottom, sprite2Right, sprite2Left);
-  draw_formatted(5, 9, "S1: bottom: %02d , top: %02d, right: %02d, left: %02d", sprite1Top, sprite1Bottom, sprite1Right, sprite1Left);
+  draw_formatted(5, 8, "S1: bottom: %02d , top: %02d, right: %02d, left: %02d",sprite1Top, sprite1Bottom, sprite1Right, sprite1Left );
+  draw_formatted(5, 9, "S2: top: %02d , bottom: %02d, right: %02d, left: %02d",sprite2Bottom, sprite2Top, sprite2Right, sprite2Left );
 
   if (xCollision(hero, platform[0]) == true && yCollision(hero, platform[0]) == true) draw_string(50, 3, "Collision detected (X & Y)");
   else if (xCollision(hero, platform[0])) draw_string(50, 3, "Collision detected (X)");
   else if (yCollision(hero, platform[0])) draw_string(50, 3, "Collision detected (Y)");
 
   if (ground == true) draw_string(50, 5, "colliding with ground");
-  else draw_string(50, 5, "not colliding with roo ground");
+  else draw_string(50, 5, "not colliding with ground");
 
   if (roof == true) draw_string(50, 4, "colliding with roof");
   else draw_string(50, 4, "not colliding with roof");
@@ -341,7 +354,7 @@ void process(void) {
   sprite_step(hero);
 
   // Debugger.
-  // display_debug_data();
+  display_debug_data();
 
 }
 
