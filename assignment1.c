@@ -23,8 +23,11 @@ bool collision = true;
 bool topCollision = false;
 bool ground = false;
 bool roof = false;
+bool switcher = true;
 double dx = 0;
 double dy = 0;
+double Edx = 0;
+double Edy = 0;
 double velocity = 0;
 double gravity = 0.1;
 int seconds = 0;
@@ -35,7 +38,6 @@ int score = 0;
 int level = 1;
 int lives = 10;
 int platformAmount = 1;
-
 int sprite1Bottom;
 int sprite1Top;
 int sprite1Left;
@@ -45,6 +47,7 @@ int sprite2Top;
 int sprite2Left;
 int sprite2Right;
 
+
 // Declaring interactive sprites/ characters.
 char * charGround =
 /**/	" o "
@@ -53,8 +56,8 @@ char * charGround =
 
 char * lvlOneEnemy =
 /**/	"ZZZZ"
-/**/	"  Z  "
-/**/	" Z   "
+/**/	"  Z "
+/**/	" Z  "
 /**/	"ZZZZ";
 
 char * platformBase =
@@ -67,7 +70,7 @@ char * exitImg =
 /**/ "|  |";
 // Declaring sprites.
 sprite_id hero; sprite_id enemy; sprite_id platform[10];
-// sprite_id door;
+sprite_id door;
 
 // Windows main borders.
 void drawArena(void) {
@@ -89,9 +92,13 @@ void DrawPlatforms() {
       // level 1.
       platform[0] = initPlatforms(0, screen_height() - 1, screen_width());
       platform[1] = initPlatforms((screen_width() * 0.3), screen_height() - (1 + (HERO_HEIGHT * 3.5)), (screen_width() * 0.3));
-      sprite_draw(platform[0]); sprite_draw(platform[1]); break;
+      sprite_draw(platform[0]); sprite_draw(platform[1]);
+      enemy = sprite_create(screen_width() - 9, screen_height() - 5, 4, 4, lvlOneEnemy);
+      sprite_draw(enemy);
+      break;
     case 2:
       // level 2.
+      // sprite_draw(ex)
       platform[0] = initPlatforms(0, screen_height(), screen_width());
       platform[1] = initPlatforms((screen_width() * 0.4), screen_height() - (1 + (HERO_HEIGHT * 3.5)), (screen_width() * 0.3));
       platform[2] = initPlatforms((screen_width() * 0.3), screen_height() - (2 + (HERO_HEIGHT * 7)), (screen_width() * 0.2));
@@ -103,6 +110,27 @@ void DrawPlatforms() {
       platform[2] = initPlatforms((screen_width() * 0.3), screen_height() - (2 + (HERO_HEIGHT * 7)), (screen_width() * 0.2));
       sprite_draw(platform[0]); sprite_draw(platform[1]); sprite_draw(platform[2]); break;
   }
+}
+
+// Function for enemy movement.
+void enemyMovement(sprite_id opponent) {
+  int w = screen_width(), h = screen_height();
+	int zx = round(sprite_x(opponent));
+	int zy = round(sprite_y(opponent));
+  Edx = round(sprite_dx(opponent));
+  Edy = round(sprite_dy(opponent));
+
+  if (zx > 1 && zx < w - 3 && switcher == true) {
+    switcher = false;
+    Edx = 1;
+  }
+  else if (zx > 1 && zx < w - 3 && switcher == false) {
+    switcher = true;
+    Edx = -1;
+  }
+  else Edx = 0;
+  sprite_turn_to(enemy, Edx, Edy);
+
 }
 
 // Wall collision detection.
@@ -147,7 +175,6 @@ bool yCollision(sprite_id sprite1, sprite_id sprite2){
   else if (sprite1Top == sprite2Bottom + 1) {
     roof = true; ground = false; return true;
   }
-  //
   else {
     roof = false; ground = false; return false;
   }
@@ -329,6 +356,10 @@ void display_debug_data() {
   if (ground == true) draw_string(50, 5, "colliding with ground");
   else draw_string(50, 5, "not colliding with ground");
 
+  draw_formatted(50, 7, "Enemy dx: %02d , Enemy dy = %02d",Edx, Edy);
+
+
+
   if (roof == true) draw_string(50, 4, "colliding with roof");
   else draw_string(50, 4, "not colliding with roof");
 
@@ -343,14 +374,15 @@ void process(void) {
   clear_screen();
   // Create game.
   drawGame();
+  // Enemy movement.
+  enemyMovement(enemy);
+  sprite_draw(enemy);
   // Character movement.
   moveChar();
   sprite_turn_to(hero, dx, round(dy));
   sprite_step(hero);
-
   // Debugger.
   display_debug_data();
-
 }
 
 // Initial setup.
