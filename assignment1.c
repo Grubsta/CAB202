@@ -161,80 +161,44 @@ void moveChar(void){
   if (key == 'l') level ++;
   // Collision checks between platform/s and hero.
   for (int i = 0; i <= platformAmount; i++){
-  if (xCollision(hero, platform[i])){
-    if (yCollision(hero, platform[i])){
-        if (roof == true){
-          dy += gravity;
-          velocity = 0;
-          sprite_back(hero);
+    if (xCollision(hero, platform[i])){
+      if (yCollision(hero, platform[i])){
+          if (roof == true){
+            sprite_back(hero);
+            dy += gravity;
+            velocity = 0;
+
+          }
+          else if (ground == true){
+            dy = 0;
+            air = false;
+          }
         }
-        else if (ground == true){
-          dy = 0;
-          air = false;
-        }
+        // else if (air == true) {
+        //   dy += gravity;
+        //   velocity = 0;
+        // }
       }
     }
-  }
-  // if (xCollision(hero, platform[1])){
-  //     if (yCollision(hero, platform[1])){
-  //       if(roof == true){
-  //         dy += gravity;
-  //         velocity = 0;
-  //         sprite_back(hero);
-  //       }
-  //       else if(ground == true){
-  //         dy = 0;
-  //         air = false;
-  //     }
-  //   }
-  // }
   if (ground == false && roof == false) dy += gravity;
   if (air == true);
-  if (wallCollision(hero)) {
+  if (sprite1Right > screen_width() - 3 || sprite1Left < 1){
+    if (air == true) sprite_back(hero);
     dx = 0;
     velocity = 0;
     sprite_back(hero);
   }
-  // Else, continue with user controls.
+  // Roof collision.
   else if (sprite_y(hero) <= 3) {
     dy += gravity;
     velocity = 0;
     sprite_back(hero);
   }
+  // Else, continue with user controls.
   else{
     if (air == false){
-      if (key == KEY_UP){
-          air = true;
-          dy = -1.7;
-
-      }
-      //check right arrrow key
-      if (key == KEY_RIGHT){
-        if (right == true) velocity = 1;
-        else if (left == true && velocity == 1) velocity = 0.5;
-        else if (left == true && velocity == 0.5){
-          left = false;
-          right = false;
-          velocity = 0;
-
-        }
-        else {
-          left = false;
-          right = true;
-          velocity = 0.5;
-
-        }
-        if (velocity != 0 ){
-          dx = velocity;
-
-        }
-        else {
-          dx = 0;
-
-        }
-      }
-      //check left arrow key
-      else if (key == KEY_LEFT){
+      // Checks for left arrow input.
+      if (key == KEY_LEFT){
         if (left == true){
           left = true;
           right = false;
@@ -265,6 +229,37 @@ void moveChar(void){
             dx = 0;
 
         }
+      }
+      // Checks for right arrow input.
+      else if (key == KEY_RIGHT){
+        if (right == true) velocity = 1;
+        else if (left == true && velocity == 1) velocity = 0.5;
+        else if (left == true && velocity == 0.5){
+          left = false;
+          right = false;
+          velocity = 0;
+
+        }
+        else {
+          left = false;
+          right = true;
+          velocity = 0.5;
+
+        }
+        if (velocity != 0 ){
+          dx = velocity;
+
+        }
+        else {
+          dx = 0;
+
+        }
+      }
+      // Checks for up arrow input.
+      else if (key == KEY_UP){
+          air = true;
+          dy = -1.7;
+
       }
     }
   }
