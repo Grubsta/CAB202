@@ -60,8 +60,8 @@ char * batEnemy1 =
 /**/	 " | ";
 
 char * batEnemy2 =
-/**/	"\\ /"
-/**/	 " | ";
+/**/	 " | "
+/**/	 "/ \\";
 
 char * boulderEnemy =
 /**/	"/''\\"
@@ -104,16 +104,28 @@ void DrawPlatforms() {
   switch (level) {
     case 1:
       // level 1.
+      if (spriteDrawn == false) {
+        // Set up the hero at the left of the screen.
+        hero = sprite_create(2 + HERO_WIDTH, screen_height()-HERO_HEIGHT-1, HERO_WIDTH, HERO_HEIGHT, charGround);
+        // Set up zombie at the right of the screen.
+        enemy = sprite_create(screen_width() - 9, screen_height() - 5, 4, 4, zombieEnemy);
+        // Resetting value.
+        spriteDrawn = true;
+      }
       platform[0] = initPlatforms(0, screen_height() - 1, screen_width());
       platform[1] = initPlatforms((screen_width() * 0.3), screen_height() - (1 + (HERO_HEIGHT * 3.5)), (screen_width() * 0.3));
       sprite_draw(platform[0]); sprite_draw(platform[1]);
       break;
     case 2:
       // level 2.
-      // if (spriteDrawn == false) {
-      //   // create hero and zombie
-      //   // spriteDrawn = true;
-      // }
+      if (spriteDrawn == false) {
+        // Set up the hero at the left of the screen.
+        hero = sprite_create(2 + HERO_WIDTH, screen_height()-HERO_HEIGHT-1, HERO_WIDTH, HERO_HEIGHT, charGround);
+        // Set up zombie at the right of the screen.
+        enemy = sprite_create(screen_width() - 9, screen_height() - 4, 3, 3, batEnemy1);
+        // Resetting value.
+        spriteDrawn = true;
+      }
       platformAmount = 2;
       platform[0] = initPlatforms(0, screen_height() - 1, screen_width());
       platform[1] = initPlatforms((screen_width() * 0.3), screen_height() - (1 + (HERO_HEIGHT * 2)), (screen_width() * 0.3));
@@ -123,11 +135,19 @@ void DrawPlatforms() {
       sprite_draw(platform[0]); sprite_draw(platform[1]); sprite_draw(platform[2]); break;
     case 3:
       // level 3.
+      if (spriteDrawn == false) {
+        // Set up the hero at the left of the screen.
+        hero = sprite_create(2 + HERO_WIDTH, screen_height()-HERO_HEIGHT-1, HERO_WIDTH, HERO_HEIGHT, charGround);
+        // Set up zombie at the right of the screen.
+        enemy = sprite_create(screen_width() - 9, screen_height() - 5, 4, 4, zombieEnemy);
+        // Resetting value.
+        spriteDrawn = true;
+      }
       platformAmount = 3;
       platform[0] = initPlatforms(0, screen_height() - 1, screen_width() * 0.25);
-      platform[1] = initPlatforms(screen_width() * 0.75, screen_height(), screen_width() * 0.25);
+      platform[1] = initPlatforms(screen_width() * 0.75, screen_height() - 1, screen_width() * 0.25);
       platform[2] = initPlatforms(screen_width() * 0.25, screen_height() - (2 + (HERO_HEIGHT * 3.5)), (screen_width() * 0.5));
-      platform[3] = initPlatforms(((screen_width() * 0.5) / 3) * 2, screen_height() - (2 + (HERO_HEIGHT * 7)), (screen_width() * 0.5));
+      platform[3] = initPlatforms(((screen_width() * 0.5) / 2) * 2, screen_height() - (2 + (HERO_HEIGHT * 7)), (screen_width() * 0.5));
       sprite_draw(platform[0]); sprite_draw(platform[1]); sprite_draw(platform[2]); sprite_draw(platform[3]); break;
     case 4:
       // Level 4.
@@ -136,6 +156,15 @@ void DrawPlatforms() {
       // Level 5.
       break;
   }
+}
+
+// Destroys all the sprites.
+void destroyGame(void) {
+  for (int i = 0; i <= platformAmount; i++){
+    sprite_destroy(platform[i]);
+  }
+  sprite_destroy(enemy); sprite_destroy(hero); sprite_destroy(door);
+  spriteDrawn = false;
 }
 
 // Wall collision detection.
@@ -153,65 +182,21 @@ bool wallCollision(sprite_id sprite){
 
 // Function for enemy movement.
 void enemyMovement(sprite_id opponent) {
-  // int w = screen_width();
-	// int zx = round(sprite_x(opponent));
-	// int zy = round(sprite_y(opponent));
-  // Edx = sprite_dx(opponent);
-  // Edy = round(sprite_dy(opponent));
-  // int enemyLeft = round(sprite_x(opponent));
-  // int enemyRight = round(sprite_x(opponent) + 4);
-
   if (wallCollision(enemy)) {
-    if (sprite_x(enemy) < screen_width() * 0.5){
-          // sprite_back(enemy);
-          Edx = 0.15;
-          switcher = false;
+    if (sprite_x(enemy) < screen_width() * 0.5) {
+      // if (switcher == false)
+      Edx = 0.15;
+      switcher = false;
     }
-    else if (sprite_x(enemy) > screen_width() * 0.5)
-      // sprite_back(enemy);
+    else if (sprite_x(enemy) > screen_width() * 0.5) {
       Edx = -0.15;
       switcher = false;
     }
   }
-  // Restricts zombie in x-axis.
-  // if (zx > 1 && zx < w - 2 && switcher == false) {
-  //   if (enemyLeft < 1) Edx = 0.2;
-  //   if (enemyRight > screen_width() - 4) Edx = -0.2;
-  //   else Edx = 0.2;
-  //   switcher = true;
-  // }
-  // else if (zx > 1 && zx < w - 2 && switcher == true) {
-  //   if (enemyLeft < 1) Edx = 0.2;
-  //   if (enemyRight > screen_width() - 4) Edx = -0.2;
-  //   else Edx = -0.2;
-  //   switcher = true;
-  // }
-  // if (enemyLeft > 1 && enemyRight < screen_width() - 2  && switcher == true){
-  //   if (enemyLeft == 1) {
-  //     // sprite_back(enemy);
-  //     Edx = 0.2;
-  //     switcher = false;
-  //   }
-  //   else if (enemyRight == screen_width() - 2) {
-  //     // sprite_back(enemy);
-  //     Edx = -0.2;
-  //     switcher = false;
-  //   }
-  //   else Edx = -0.2;
-  // }
-  // else if (enemyLeft > 1 && enemyRight < screen_width() - 2  && switcher == true){
-  //   if (enemyLeft == 1) {
-  //     // sprite_back(enemy);
-  //     Edx = 0.2;
-  //     switcher = true;
-  //   }
-  //   else if (enemyRight == screen_width() - 2) {
-  //     // sprite_back(enemy);
-  //     Edx = -0.2;
-  //     switcher = true;
-  //   } else Edx = -0.2;
-  // }
-
+  if (level == 5) {
+    // add dy physics here.
+  }
+}
 
 // X-value collision detection.
 bool xCollision(sprite_id sprite1, sprite_id sprite2){
@@ -235,6 +220,10 @@ bool yCollision(sprite_id sprite1, sprite_id sprite2){
   sprite2Bottom = round(sprite_y(sprite2)); // stops head from glitching
   sprite2Top = round(sprite_y(sprite2));
   // If collision with top of platform.
+  // if (sprite1Bottom < screen_height()) {
+  //   lives -= 1;
+  //   destroyGame();
+  // }
   if (sprite1Bottom == sprite2Top) {
     roof = false; ground = true; return true;
   }
@@ -247,12 +236,15 @@ bool yCollision(sprite_id sprite1, sprite_id sprite2){
   }
 }
 
-//check the keys
+// Checks all user movements and inputs.
 void moveChar(void){
   // User input.
   int key = get_char();
   // Level indicator.
-  if (key == 'l') level ++;
+  if (key == 'l') {
+    level ++;
+    destroyGame();
+  }
   // Collision checks between platform/s and hero.
   for (int i = 0; i <= platformAmount; i++){
     if (xCollision(hero, platform[i])){
@@ -270,7 +262,9 @@ void moveChar(void){
         }
       }
     }
+  // Gravity if character is in air.
   if (ground == false && roof == false) dy += gravity;
+  // Wall collision.
   if (sprite1Right > screen_width() - 3 || sprite1Left < 1){
     if (air == true) sprite_back(hero);
     dx = 0;
@@ -283,8 +277,17 @@ void moveChar(void){
     velocity = 0;
     sprite_back(hero);
   }
+  // Enemy collision.
+  else if (xCollision(hero, enemy) && yCollision(hero, enemy)){
+    lives -= 1;
+    destroyGame();
+  }
+  else if (xCollision(hero, door) && yCollision(hero, door)){
+    level += 1;
+    destroyGame();
+  }
   // Else, continue with user controls.
-  else{
+  else {
     if (air == false){
       // Checks for left arrow input.
       if (key == KEY_LEFT){
@@ -354,16 +357,26 @@ void moveChar(void){
   }
 }
 
-// void createExit(void){
-//   door = sprite_create(screen_width() - 8, screen_height() - 5, 4, 4, exitImg);
-//   sprite_draw(door);
-//  }
+// Creates Exit door.
+void createExit(void){
+  door = sprite_create(screen_width() - 8, screen_height() - 5, 4, 4, exitImg);
+  sprite_draw(door);
+ }
+
+// Ends game upon death count == 0.
+void endGame(void){
+  if (lives == 0) {
+    destroyGame();
+  }
+}
 
 // Draws components of game.
 void drawGame(void) {
+  // Creates Arena elements.
 	drawArena();
   DrawPlatforms();
-  // createExit();
+  createExit();
+  // Draws previously initialised sprites.
 	sprite_draw(hero);
   sprite_draw(enemy);
 }
@@ -461,12 +474,12 @@ void setup(void) {
 
 // Main loop.
 int main(void) {
-  // Draw game environment
+  // Draw game environment.
   setup_screen();
 	setup();
 
 	while ( !game_over ) {
-    // Continue drawing frames
+    // Continue drawing frames.
     process();
     timer();
     gameHud();
