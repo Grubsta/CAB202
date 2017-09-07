@@ -9,8 +9,8 @@
 #define DELAY (10)
 #define HERO_WIDTH (3)
 #define HERO_HEIGHT (3)
-#define ZOMBIE_WIDTH (4)
-#define ZOMBIE_HEIGHT (4)
+// #define ZOMBIE_WIDTH (4)
+// #define ZOMBIE_HEIGHT (4)
 #define PLATFORM_HEIGHT (1)
 
 // Initialising game variables.
@@ -24,10 +24,11 @@ bool topCollision = false;
 bool ground = false;
 bool roof = false;
 bool switcher = true;
+bool spriteDrawn = false;
 double dx = 0;
 double dy = 0;
 double Edx = 0;
-double Edy = 0;
+int Edy = 0;
 double velocity = 0;
 double gravity = 0.1;
 int seconds = 0;
@@ -54,7 +55,19 @@ char * charGround =
 /**/	"/|\\"
 /**/	"/ \\";
 
-char * lvlOneEnemy =
+char * batEnemy1 =
+/**/	"\\ /"
+/**/	 " | ";
+
+char * batEnemy2 =
+/**/	"\\ /"
+/**/	 " | ";
+
+char * boulderEnemy =
+/**/	"/''\\"
+/**/  "\\__/";
+
+char * zombieEnemy =
 /**/	"ZZZZ"
 /**/	"  Z "
 /**/	" Z  "
@@ -68,6 +81,7 @@ char * exitImg =
 /**/ "|  |"
 /**/ "| .|"
 /**/ "|  |";
+
 // Declaring sprites.
 sprite_id hero; sprite_id enemy; sprite_id platform[10];
 sprite_id door;
@@ -93,44 +107,59 @@ void DrawPlatforms() {
       platform[0] = initPlatforms(0, screen_height() - 1, screen_width());
       platform[1] = initPlatforms((screen_width() * 0.3), screen_height() - (1 + (HERO_HEIGHT * 3.5)), (screen_width() * 0.3));
       sprite_draw(platform[0]); sprite_draw(platform[1]);
-      enemy = sprite_create(screen_width() - 9, screen_height() - 5, 4, 4, lvlOneEnemy);
-      sprite_draw(enemy);
       break;
     case 2:
       // level 2.
-      // sprite_draw(ex)
-      platform[0] = initPlatforms(0, screen_height(), screen_width());
-      platform[1] = initPlatforms((screen_width() * 0.4), screen_height() - (1 + (HERO_HEIGHT * 3.5)), (screen_width() * 0.3));
-      platform[2] = initPlatforms((screen_width() * 0.3), screen_height() - (2 + (HERO_HEIGHT * 7)), (screen_width() * 0.2));
+      // if (spriteDrawn == false) {
+      //   // create hero and zombie
+      //   // spriteDrawn = true;
+      // }
+      platformAmount = 2;
+      platform[0] = initPlatforms(0, screen_height() - 1, screen_width());
+      platform[1] = initPlatforms((screen_width() * 0.3), screen_height() - (1 + (HERO_HEIGHT * 2)), (screen_width() * 0.3));
+      // platform[1] = initPlatforms((screen_width() * 0.3), screen_height() - (1 + (HERO_HEIGHT * 3.5)), (screen_width() * 0.3));
+      platform[2] = initPlatforms((screen_width() * 0.35), screen_height() - (2 + (HERO_HEIGHT * 4)), (screen_width() * 0.2));
+      // platform[2] = initPlatforms((screen_width() * 0.3), screen_height() - (2 + (HERO_HEIGHT * 7)), (screen_width() * 0.2));
       sprite_draw(platform[0]); sprite_draw(platform[1]); sprite_draw(platform[2]); break;
     case 3:
       // level 3.
-      platform[0] = initPlatforms(0, screen_height(), screen_width());
-      platform[1] = initPlatforms((screen_width() * 0.4), screen_height() - (1 + (HERO_HEIGHT * 3.5)), (screen_width() * 0.3));
-      platform[2] = initPlatforms((screen_width() * 0.3), screen_height() - (2 + (HERO_HEIGHT * 7)), (screen_width() * 0.2));
-      sprite_draw(platform[0]); sprite_draw(platform[1]); sprite_draw(platform[2]); break;
+      platform[0] = initPlatforms(0, screen_height() - 1, screen_width() * 0.25);
+      platform[1] = initPlatforms(screen_width() * 0.75, screen_height(), screen_width() * 0.25);
+      platform[2] = initPlatforms(screen_width() * 0.25, screen_height() - (2 + (HERO_HEIGHT * 3.5)), (screen_width() * 0.5));
+      platform[3] = initPlatforms(((screen_width() * 0.5) / 3) * 2, screen_height() - (2 + (HERO_HEIGHT * 7)), (screen_width() * 0.5));
+      sprite_draw(platform[0]); sprite_draw(platform[1]); sprite_draw(platform[2]); sprite_draw(platform[3]); break;
+    case 4:
+      // Level 4.
+      break;
+    case 5:
+      // Level 5.
+      break;
   }
 }
 
 // Function for enemy movement.
 void enemyMovement(sprite_id opponent) {
-  int w = screen_width(), h = screen_height();
+  int w = screen_width();
 	int zx = round(sprite_x(opponent));
-	int zy = round(sprite_y(opponent));
-  Edx = round(sprite_dx(opponent));
+	// int zy = round(sprite_y(opponent));
+  Edx = sprite_dx(opponent);
   Edy = round(sprite_dy(opponent));
+  int enemyLeft = sprite_x(opponent);
+  int enemyRight = sprite_x(opponent) + sprite_width(opponent);
 
-  if (zx > 1 && zx < w - 3 && switcher == true) {
-    switcher = false;
-    Edx = 1;
-  }
-  else if (zx > 1 && zx < w - 3 && switcher == false) {
+  // Restricts zombie in x-axis.
+  if (zx > 1 && zx < w - 2 && switcher == false) {
+    if (enemyLeft < 1) Edx = 0.2;
+    if (enemyRight > screen_width() - 3 ) Edx = -0.2;
+    else Edx = -0.2;
     switcher = true;
-    Edx = -1;
   }
-  else Edx = 0;
-  sprite_turn_to(enemy, Edx, Edy);
-
+  else if (zx > 1 && zx < w - 2 && switcher == true) {
+    if (enemyLeft < 1) Edx = 0.2;
+    if (enemyRight > screen_width() - 3 ) Edx = -0.2;
+    else Edx = -0.2;
+    switcher = true;
+  }
 }
 
 // Wall collision detection.
@@ -201,14 +230,9 @@ void moveChar(void){
             air = false;
           }
         }
-        // else if (air == true) {
-        //   dy += gravity;
-        //   velocity = 0;
-        // }
       }
     }
   if (ground == false && roof == false) dy += gravity;
-  if (air == true);
   if (sprite1Right > screen_width() - 3 || sprite1Left < 1){
     if (air == true) sprite_back(hero);
     dx = 0;
@@ -299,20 +323,21 @@ void moveChar(void){
 
 // Draws components of game.
 void drawGame(void) {
-  	drawArena();
-    DrawPlatforms();
-    // createExit();
-  	sprite_draw(hero);
-  }
+	drawArena();
+  DrawPlatforms();
+  // createExit();
+	sprite_draw(hero);
+  sprite_draw(enemy);
+}
 
 // Game hud.
 void gameHud(void) {
-    int width = screen_width() / 4;
-    draw_formatted(2, 1, "Time: %02d:%02d", minutes, seconds);
-    draw_formatted(width, 1, "Lives: %d", lives);
-    draw_formatted(width * 2, 1, "Level: %d", level);
-    draw_formatted(width * 3, 1, "Score: %d", score);
-  }
+  int width = screen_width() / 4;
+  draw_formatted(2, 1, "Time: %02d:%02d", minutes, seconds);
+  draw_formatted(width, 1, "Lives: %d", lives);
+  draw_formatted(width * 2, 1, "Level: %d", level);
+  draw_formatted(width * 3, 1, "Score: %d", score);
+}
 
 // Initialise Timer
 void timer(void) {
@@ -335,6 +360,8 @@ void timer(void) {
 void display_debug_data() {
   double dx = sprite_dx(hero);
   double dy = sprite_dy(hero);
+  int Edx = sprite_dx(enemy);
+  int Edy = sprite_dy(enemy);
   int x = sprite_x(hero);
   int y = sprite_y(hero);
   draw_string(5,3, "Debug Data");
@@ -356,16 +383,12 @@ void display_debug_data() {
   if (ground == true) draw_string(50, 5, "colliding with ground");
   else draw_string(50, 5, "not colliding with ground");
 
-  draw_formatted(50, 7, "Enemy dx: %02d , Enemy dy = %02d",Edx, Edy);
-
-
-
+  draw_formatted(45, 7, "Enemy dx: %02d , Enemy dy = %02d",Edx, Edy);
   if (roof == true) draw_string(50, 4, "colliding with roof");
   else draw_string(50, 4, "not colliding with roof");
 
   if (air == true) draw_string(50, 6, "jumping");
   else draw_string(50, 6, "not jumping");
-
 }
 
 // Play one turn of game.
@@ -376,7 +399,8 @@ void process(void) {
   drawGame();
   // Enemy movement.
   enemyMovement(enemy);
-  sprite_draw(enemy);
+  sprite_turn_to(enemy, Edx, round(Edy));
+  sprite_step(enemy);
   // Character movement.
   moveChar();
   sprite_turn_to(hero, dx, round(dy));
@@ -387,12 +411,11 @@ void process(void) {
 
 // Initial setup.
 void setup(void) {
-  // Useful variables.
-  int width = screen_width(), heroWidth = HERO_WIDTH, zombieWidth = ZOMBIE_WIDTH;
-  int height = screen_height(), heroHeight = HERO_HEIGHT, zombieHeight = ZOMBIE_HEIGHT;
-  // (d) Set up the hero at the centre of the screen.
-	hero = sprite_create(2 + heroWidth, height-heroHeight-1, heroWidth, heroHeight, charGround);
-  // (e) Draw the game.
+  // Set up the hero at the left of the screen.
+  hero = sprite_create(2 + HERO_WIDTH, screen_height()-HERO_HEIGHT-1, HERO_WIDTH, HERO_HEIGHT, charGround);
+  // Set up zombie at the right of the screen.
+  enemy = sprite_create(screen_width() - 9, screen_height() - 5, 4, 4, zombieEnemy);
+  // Draw the game.
   drawGame();
   // Display Screen.
 	show_screen();
