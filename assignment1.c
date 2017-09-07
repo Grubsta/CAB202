@@ -27,7 +27,7 @@ bool switcher = true;
 bool spriteDrawn = false;
 double dx = 0;
 double dy = 0;
-double Edx = 0;
+double Edx = -0.15;
 int Edy = 0;
 double velocity = 0;
 double gravity = 0.1;
@@ -123,6 +123,7 @@ void DrawPlatforms() {
       sprite_draw(platform[0]); sprite_draw(platform[1]); sprite_draw(platform[2]); break;
     case 3:
       // level 3.
+      platformAmount = 3;
       platform[0] = initPlatforms(0, screen_height() - 1, screen_width() * 0.25);
       platform[1] = initPlatforms(screen_width() * 0.75, screen_height(), screen_width() * 0.25);
       platform[2] = initPlatforms(screen_width() * 0.25, screen_height() - (2 + (HERO_HEIGHT * 3.5)), (screen_width() * 0.5));
@@ -134,31 +135,6 @@ void DrawPlatforms() {
     case 5:
       // Level 5.
       break;
-  }
-}
-
-// Function for enemy movement.
-void enemyMovement(sprite_id opponent) {
-  int w = screen_width();
-	int zx = round(sprite_x(opponent));
-	// int zy = round(sprite_y(opponent));
-  Edx = sprite_dx(opponent);
-  Edy = round(sprite_dy(opponent));
-  int enemyLeft = sprite_x(opponent);
-  int enemyRight = sprite_x(opponent) + sprite_width(opponent);
-
-  // Restricts zombie in x-axis.
-  if (zx > 1 && zx < w - 2 && switcher == false) {
-    if (enemyLeft < 1) Edx = 0.2;
-    if (enemyRight > screen_width() - 3 ) Edx = -0.2;
-    else Edx = -0.2;
-    switcher = true;
-  }
-  else if (zx > 1 && zx < w - 2 && switcher == true) {
-    if (enemyLeft < 1) Edx = 0.2;
-    if (enemyRight > screen_width() - 3 ) Edx = -0.2;
-    else Edx = -0.2;
-    switcher = true;
   }
 }
 
@@ -174,6 +150,68 @@ bool wallCollision(sprite_id sprite){
   	return false;
 	}
 }
+
+// Function for enemy movement.
+void enemyMovement(sprite_id opponent) {
+  // int w = screen_width();
+	// int zx = round(sprite_x(opponent));
+	// int zy = round(sprite_y(opponent));
+  // Edx = sprite_dx(opponent);
+  // Edy = round(sprite_dy(opponent));
+  // int enemyLeft = round(sprite_x(opponent));
+  // int enemyRight = round(sprite_x(opponent) + 4);
+
+  if (wallCollision(enemy)) {
+    if (sprite_x(enemy) < screen_width() * 0.5){
+          // sprite_back(enemy);
+          Edx = 0.15;
+          switcher = false;
+    }
+    else if (sprite_x(enemy) > screen_width() * 0.5)
+      // sprite_back(enemy);
+      Edx = -0.15;
+      switcher = false;
+    }
+  }
+  // Restricts zombie in x-axis.
+  // if (zx > 1 && zx < w - 2 && switcher == false) {
+  //   if (enemyLeft < 1) Edx = 0.2;
+  //   if (enemyRight > screen_width() - 4) Edx = -0.2;
+  //   else Edx = 0.2;
+  //   switcher = true;
+  // }
+  // else if (zx > 1 && zx < w - 2 && switcher == true) {
+  //   if (enemyLeft < 1) Edx = 0.2;
+  //   if (enemyRight > screen_width() - 4) Edx = -0.2;
+  //   else Edx = -0.2;
+  //   switcher = true;
+  // }
+  // if (enemyLeft > 1 && enemyRight < screen_width() - 2  && switcher == true){
+  //   if (enemyLeft == 1) {
+  //     // sprite_back(enemy);
+  //     Edx = 0.2;
+  //     switcher = false;
+  //   }
+  //   else if (enemyRight == screen_width() - 2) {
+  //     // sprite_back(enemy);
+  //     Edx = -0.2;
+  //     switcher = false;
+  //   }
+  //   else Edx = -0.2;
+  // }
+  // else if (enemyLeft > 1 && enemyRight < screen_width() - 2  && switcher == true){
+  //   if (enemyLeft == 1) {
+  //     // sprite_back(enemy);
+  //     Edx = 0.2;
+  //     switcher = true;
+  //   }
+  //   else if (enemyRight == screen_width() - 2) {
+  //     // sprite_back(enemy);
+  //     Edx = -0.2;
+  //     switcher = true;
+  //   } else Edx = -0.2;
+  // }
+
 
 // X-value collision detection.
 bool xCollision(sprite_id sprite1, sprite_id sprite2){
@@ -382,7 +420,7 @@ void display_debug_data() {
 
   if (ground == true) draw_string(50, 5, "colliding with ground");
   else draw_string(50, 5, "not colliding with ground");
-
+  // draw_formatted(35, 7, "Enemy Left: %02d , Enemy Right = %02d", round(sprite_x(enemy)), round(sprite_x(enemy) + sprite_width(enemy)));
   draw_formatted(45, 7, "Enemy dx: %02d , Enemy dy = %02d",Edx, Edy);
   if (roof == true) draw_string(50, 4, "colliding with roof");
   else draw_string(50, 4, "not colliding with roof");
