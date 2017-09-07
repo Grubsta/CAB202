@@ -232,11 +232,11 @@ bool yCollision(sprite_id sprite1, sprite_id sprite2){
   // Sprite 2.
   sprite2Bottom = round(sprite_y(sprite2)); // stops head from glitching
   sprite2Top = round(sprite_y(sprite2));
-  // if (air == true && sprite1Bottom == sprite2Top + 1) { // ### collision detected when you jump off
-  //   roof = false; ground = true; return true;
-  // }
-  // else if (sprite1Bottom == sprite2Top) {
-  if (sprite1Bottom == sprite2Top) {
+  if (air == true && sprite1Bottom == sprite2Top + 1) { // ### collision detected when you jump off
+    roof = false; ground = true; return true;
+  }
+  else if (sprite1Bottom == sprite2Top) {
+  // if (sprite1Bottom == sprite2Top) {
     roof = false; ground = true; return true;
   }
   // If collision with bottom of platform.
@@ -267,6 +267,9 @@ void moveChar(void){
             velocity = 0;
           }
           else if (ground == true){
+            if (air == true) {
+              sprite_back(hero);
+            }
             dy = 0;
             air = false;
           }
