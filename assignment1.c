@@ -54,6 +54,11 @@ char * charGround =
 /**/	"/|\\"
 /**/	"/ \\";
 
+char * charAir =
+/**/ "\\o/ "
+/**/	" | "
+/**/	"/ \\";
+
 char * batEnemy1 =
 /**/	"\\ /"
 /**/	 " | ";
@@ -121,7 +126,7 @@ void DrawPlatforms() {
         // Set up the hero at the left of the screen.
         hero = sprite_create(2 + HERO_WIDTH, screen_height()-HERO_HEIGHT-1, HERO_WIDTH, HERO_HEIGHT, charGround);
         // Set up zombie at the right of the screen.
-        enemy = sprite_create(screen_width() - 9, screen_height() - 3, 3, 3, batEnemy1);
+        enemy = sprite_create(screen_width() - 9, screen_height() - 4, 3, 2, batEnemy1);
         // Resetting value.
         spriteDrawn = true;
       }
@@ -138,7 +143,7 @@ void DrawPlatforms() {
         // Set up the hero at the left of the screen.
         hero = sprite_create(2 + HERO_WIDTH, screen_height()-HERO_HEIGHT-1, HERO_WIDTH, HERO_HEIGHT, charGround);
         // Set up zombie at the right of the screen.
-        enemy = sprite_create(screen_width() - 9, screen_height() - 5, 4, 4, zombieEnemy);
+        sprite_create(screen_width() - 9, (screen_height() - (2 + (HERO_HEIGHT * 7) - 1)), 3, 2, batEnemy1);
         // Resetting value.
         spriteDrawn = true;
       }
@@ -166,6 +171,13 @@ void destroyGame(void) {
   spriteDrawn = false;
 }
 
+// Map Treasure
+void treasure(void) {
+  if (level == 3) {
+
+  }
+}
+
 // Wall collision detection.
 bool wallCollision(sprite_id sprite){
   int spriteLeft = sprite_x(sprite);
@@ -183,7 +195,9 @@ bool wallCollision(sprite_id sprite){
 void enemyMovement(sprite_id opponent) {
   if (wallCollision(enemy)) {
     if (sprite_x(enemy) < screen_width() * 0.5) {
-      // if (switcher == false)
+      if (switcher == false) {
+        if (level == 2) sprite_create(screen_width() - 9, screen_height() - 4, 3, 2, batEnemy1);
+      }
       Edx = 0.15;
       switcher = false;
     }
@@ -193,7 +207,7 @@ void enemyMovement(sprite_id opponent) {
     }
   }
   if (level == 5) {
-    // add dy physics here.
+    // ### add dy physics here.
   }
 }
 
@@ -218,7 +232,10 @@ bool yCollision(sprite_id sprite1, sprite_id sprite2){
   // Sprite 2.
   sprite2Bottom = round(sprite_y(sprite2)); // stops head from glitching
   sprite2Top = round(sprite_y(sprite2));
-
+  // if (air == true && sprite1Bottom == sprite2Top + 1) { // ### collision detected when you jump off
+  //   roof = false; ground = true; return true;
+  // }
+  // else if (sprite1Bottom == sprite2Top) {
   if (sprite1Bottom == sprite2Top) {
     roof = false; ground = true; return true;
   }
@@ -248,7 +265,6 @@ void moveChar(void){
             sprite_back(hero);
             dy += gravity;
             velocity = 0;
-
           }
           else if (ground == true){
             dy = 0;
@@ -258,8 +274,11 @@ void moveChar(void){
       }
     }
   // Gravity if character is in air.
-  if (ground == false && roof == false) { // ### fix here for bug with jumping of platform .
+  if (ground == false && roof == false) { // ### fix here for bug with jumping off platform.
     dy += gravity;
+    // hero = sprite_create(sprite_y(hero), sprite_x(hero), HERO_WIDTH, HERO_HEIGHT, charAir);
+    // ### Check to see if this collides with other DY
+    // and that is why bug is occuring.
   }
   // Wall collision.
   if (sprite1Right > screen_width() - 3 || sprite1Left < 1){
@@ -279,11 +298,14 @@ void moveChar(void){
     lives -= 1;
     destroyGame();
   }
+  // Door collision.
   else if (xCollision(hero, door) && yCollision(hero, door)){
     level += 1;
+    score += 100;
     destroyGame();
   }
   // Else, continue with user controls.
+  // else if (air == true && ground == false && roof == false && dy >) dy = 0;
   else {
     if (air == false){
       // Checks for left arrow input.
@@ -292,32 +314,20 @@ void moveChar(void){
           left = true;
           right = false;
           velocity = 1;
-
         }
-        else if (right == true && velocity == 1){
-          velocity = 0.5;
-
-        }
+        else if (right == true && velocity == 1) velocity = 0.5;
         else if (right == true && velocity == 0.5){
           left = false;
           right = false;
           velocity = 0;
-
         }
         else {
           left = true;
           right = false;
           velocity = 0.5;
-
         }
-        if (velocity != 0 ){
-          dx = velocity * -1;
-
-        }
-        else {
-            dx = 0;
-
-        }
+        if (velocity != 0) dx = velocity * -1;
+        else dx = 0;
       }
       // Checks for right arrow input.
       else if (key == KEY_RIGHT){
@@ -327,22 +337,15 @@ void moveChar(void){
           left = false;
           right = false;
           velocity = 0;
-
         }
         else {
           left = false;
           right = true;
           velocity = 0.5;
-
         }
-        if (velocity != 0 ){
-          dx = velocity;
+        if (velocity != 0 ) dx = velocity;
+        else dx = 0;
 
-        }
-        else {
-          dx = 0;
-
-        }
       }
       // Checks for up arrow input.
       else if (key == KEY_UP){
