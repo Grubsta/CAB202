@@ -5,12 +5,11 @@
 #include <cab202_timers.h>
 #include <curses.h>
 
+// TODO : ###
 // Configuration.
 #define DELAY (10)
 #define HERO_WIDTH (3)
 #define HERO_HEIGHT (3)
-// #define ZOMBIE_WIDTH (4)
-// #define ZOMBIE_HEIGHT (4)
 #define PLATFORM_HEIGHT (1)
 
 // Initialising game variables.
@@ -122,7 +121,7 @@ void DrawPlatforms() {
         // Set up the hero at the left of the screen.
         hero = sprite_create(2 + HERO_WIDTH, screen_height()-HERO_HEIGHT-1, HERO_WIDTH, HERO_HEIGHT, charGround);
         // Set up zombie at the right of the screen.
-        enemy = sprite_create(screen_width() - 9, screen_height() - 4, 3, 3, batEnemy1);
+        enemy = sprite_create(screen_width() - 9, screen_height() - 3, 3, 3, batEnemy1);
         // Resetting value.
         spriteDrawn = true;
       }
@@ -214,16 +213,12 @@ bool xCollision(sprite_id sprite1, sprite_id sprite2){
 // Y-value collision detection.
 bool yCollision(sprite_id sprite1, sprite_id sprite2){
   // Sprite 1.
-  sprite1Bottom = round(sprite_y(sprite1)) + HERO_HEIGHT;
+  sprite1Bottom = round(sprite_y(sprite1)) + HERO_HEIGHT; // ### fix here for Y value on plat ( I think )
   sprite1Top = round(sprite_y(sprite1));
   // Sprite 2.
   sprite2Bottom = round(sprite_y(sprite2)); // stops head from glitching
   sprite2Top = round(sprite_y(sprite2));
-  // If collision with top of platform.
-  // if (sprite1Bottom < screen_height()) {
-  //   lives -= 1;
-  //   destroyGame();
-  // }
+
   if (sprite1Bottom == sprite2Top) {
     roof = false; ground = true; return true;
   }
@@ -263,14 +258,16 @@ void moveChar(void){
       }
     }
   // Gravity if character is in air.
-  if (ground == false && roof == false) dy += gravity;
+  if (ground == false && roof == false) { // ### fix here for bug with jumping of platform .
+    dy += gravity;
+  }
   // Wall collision.
   if (sprite1Right > screen_width() - 3 || sprite1Left < 1){
     if (air == true) sprite_back(hero);
     dx = 0;
     velocity = 0;
     sprite_back(hero);
-  }
+  } // ### changing this to else if fixes level 1 platform glitch but destroys character movement
   // Roof collision.
   else if (sprite_y(hero) <= 3) {
     dy += gravity;
@@ -363,10 +360,11 @@ void createExit(void){
   sprite_draw(door);
  }
 
-// Ends game upon death count == 0.
+// Ends game when player reaches end or runs out of lives.
 void endGame(void){
-  if (lives == 0) {
+  if (lives == 0 || level >= 6) {
     destroyGame();
+
   }
 }
 
@@ -424,10 +422,10 @@ void display_debug_data() {
   draw_int(20, 6, x);
   draw_string(5,7, "Player Y pos: ");
   draw_int(20, 7, y);
-  draw_formatted(5, 8, "S1: bottom: %02d , top: %02d, right: %02d, left: %02d",sprite1Top, sprite1Bottom, sprite1Right, sprite1Left );
-  draw_formatted(5, 9, "S2: top: %02d , bottom: %02d, right: %02d, left: %02d",sprite2Bottom, sprite2Top, sprite2Right, sprite2Left );
+  draw_formatted(5, 8, "S1: top: %02d , bottom: %02d, right: %02d, left: %02d",sprite1Top, sprite1Bottom, sprite1Right, sprite1Left );
+  draw_formatted(5, 9, "S2: bottom: %02d , top: %02d, right: %02d, left: %02d",sprite2Bottom, sprite2Top, sprite2Right, sprite2Left );
 
-  if (xCollision(hero, platform[0]) == true && yCollision(hero, platform[0]) == true) draw_string(50, 3, "Collision detected (X & Y)");
+  if (xCollision(hero, platform[1]) == true && yCollision(hero, platform[1]) == true) draw_string(50, 3, "Collision detected (X & Y)");
   else if (xCollision(hero, platform[0])) draw_string(50, 3, "Collision detected (X)");
   else if (yCollision(hero, platform[0])) draw_string(50, 3, "Collision detected (Y)");
 
