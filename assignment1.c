@@ -6,6 +6,11 @@
 #include <curses.h>
 
 // TODO : ###
+// Zombie hitboxes on other levels
+// create maps 4 & 5 and fix 3
+// Add dy physics to Zombie
+// Fix when you jump into right of platform you glitch out of map
+
 // Configuration.
 #define DELAY (10)
 #define HERO_WIDTH (3)
@@ -37,6 +42,7 @@ int levelTime = 0;
 int score = 0;
 int level = 1;
 int lives = 10;
+int treasureVar = 1;
 int platformAmount = 1;
 int sprite1Bottom;
 int sprite1Top;
@@ -55,7 +61,7 @@ char * charGround =
 /**/	"/ \\";
 
 char * charAir =
-/**/ "\\o/ "
+/**/ "\\o/"
 /**/	" | "
 /**/	"/ \\";
 
@@ -85,6 +91,30 @@ char * exitImg =
 /**/ "|  |"
 /**/ "| .|"
 /**/ "|  |";
+
+char * treasure1 =
+/**/ "'  "
+/**/ " $ "
+/**/ "  '";
+
+char * treasure2 =
+/**/ "  '"
+/**/ " $ "
+/**/ "'  ";
+
+char * treasure3 =
+/**/ "   "
+/**/ "'$'"
+/**/ "   ";
+char * gateImg =
+/**/ "[]"
+/**/ "[]"
+/**/ "[]"
+/**/ "[]"
+/**/ "[]"
+/**/ "[]"
+/**/ "[]"
+/**/ "[]";
 
 // Declaring sprites.
 sprite_id hero; sprite_id enemy; sprite_id platform[10];
@@ -123,11 +153,8 @@ void DrawPlatforms() {
     case 2:
       // level 2.
       if (spriteDrawn == false) {
-        // Set up the hero at the left of the screen.
         hero = sprite_create(2 + HERO_WIDTH, screen_height()-HERO_HEIGHT-1, HERO_WIDTH, HERO_HEIGHT, charGround);
-        // Set up zombie at the right of the screen.
         enemy = sprite_create(screen_width() - 9, screen_height() - 4, 3, 2, batEnemy1);
-        // Resetting value.
         spriteDrawn = true;
       }
       platformAmount = 2;
@@ -140,25 +167,35 @@ void DrawPlatforms() {
     case 3:
       // level 3.
       if (spriteDrawn == false) {
-        // Set up the hero at the left of the screen.
         hero = sprite_create(2 + HERO_WIDTH, screen_height()-HERO_HEIGHT-1, HERO_WIDTH, HERO_HEIGHT, charGround);
-        // Set up zombie at the right of the screen.
-        sprite_create(screen_width() - 9, (screen_height() - (2 + (HERO_HEIGHT * 7) - 1)), 3, 2, batEnemy1);
-        // Resetting value.
+        enemy = sprite_create(screen_width() - 9, (screen_height() - (2 + (HERO_HEIGHT * 7) - 1)), 3, 2, batEnemy1);
         spriteDrawn = true;
       }
       platformAmount = 3;
       platform[0] = initPlatforms(0, screen_height() - 1, screen_width() * 0.25);
       platform[1] = initPlatforms(screen_width() * 0.75, screen_height() - 1, screen_width() * 0.25);
       platform[2] = initPlatforms(screen_width() * 0.25, screen_height() - (2 + (HERO_HEIGHT * 3.5)), (screen_width() * 0.5));
-      platform[3] = initPlatforms(((screen_width() * 0.5) / 2) * 2, screen_height() - (2 + (HERO_HEIGHT * 7)), (screen_width() * 0.5));
+      platform[3] = initPlatforms(screen_width() * 0.40, screen_height() - (2 + (HERO_HEIGHT * 7)), (screen_width() * 0.5));
       sprite_draw(platform[0]); sprite_draw(platform[1]); sprite_draw(platform[2]); sprite_draw(platform[3]); break;
     case 4:
       // Level 4.
-      break;
+      if (spriteDrawn == false) {
+        hero = sprite_create(2 + HERO_WIDTH, screen_height()-HERO_HEIGHT-1, HERO_WIDTH, HERO_HEIGHT, charGround);
+        spriteDrawn = true;
+      }
+      // ### change value from 2 * (n) to 3.5 * (n) where n is number of platfroms vertically
+      platformAmount = 3;
+      platform[0] = initPlatforms(0, screen_height() - 1, screen_width());
+      platform[1] = initPlatforms(screen_width() * 0.35, screen_height() - (2 + (HERO_HEIGHT * 2)), screen_width());
+      platform[2] = initPlatforms(0, screen_height() - (2 + (HERO_HEIGHT * 4)), screen_width() * 0.65);
+      platform[3] = initPlatforms(screen_width() * 0.35, screen_height() - (2 + (HERO_HEIGHT * 6)), screen_width());
+      sprite_draw(platform[0]); sprite_draw(platform[1]); sprite_draw(platform[2]); sprite_draw(platform[3]); break;
     case 5:
       // Level 5.
       break;
+    // case 6:
+    //   break;
+    //   // ### End game here
   }
 }
 
@@ -167,15 +204,32 @@ void destroyGame(void) {
   for (int i = 0; i <= platformAmount; i++){
     sprite_destroy(platform[i]);
   }
+  // if (level == 3 || 4 || 5) destroy key and treasure
   sprite_destroy(enemy); sprite_destroy(hero); sprite_destroy(door);
   spriteDrawn = false;
 }
 
-// Map Treasure
+// Level Treasure (if required).
 void treasure(void) {
-  if (level == 3) {
+  // switch (treasureVar) {
+  //   case 1:
+  //     sprite_set_image(treasure, treasure1);
+  //     treasureVar = 2;
+  //   case 2:
+  //     sprite_set_image(treasure, treasure2);
+  //     treasureVar = 3;
+  //   case 3:
+  //     sprite_set_image(treasure, treasure3);
+  //     treasureVar = 1;
+  // }
 
-  }
+}
+
+// Level key (if required).
+void key(void) {
+  //if (key == true) sprite_hide(gate);
+  // key = false;
+  // ### add to destroy game function, destroy key and gate if needed
 }
 
 // Wall collision detection.
@@ -191,19 +245,31 @@ bool wallCollision(sprite_id sprite){
 	}
 }
 
+// Animation for bat enemy.
+void batAnimation(void) {
+  // Repeatedly switches values; causes bat image to change.
+  if (switcher == false) {
+    sprite_set_image(enemy, batEnemy1);
+    switcher = true;
+  }
+  else if (switcher == true) {
+    sprite_set_image(enemy, batEnemy2);
+    switcher = false;
+  }
+}
+
 // Function for enemy movement.
 void enemyMovement(sprite_id opponent) {
-  if (wallCollision(enemy)) {
-    if (sprite_x(enemy) < screen_width() * 0.5) {
-      if (switcher == false) {
-        if (level == 2) sprite_create(screen_width() - 9, screen_height() - 4, 3, 2, batEnemy1);
-      }
+  // Switch for bat animation.
+  if (level == 2 || level == 3 ){
+    batAnimation();
+  }
+  if (wallCollision(opponent)) {
+    if (sprite_x(opponent) < screen_width() * 0.5) {
       Edx = 0.15;
-      switcher = false;
     }
-    else if (sprite_x(enemy) > screen_width() * 0.5) {
+    else if (sprite_x(opponent) > screen_width() * 0.5) {
       Edx = -0.15;
-      switcher = false;
     }
   }
   if (level == 5) {
@@ -227,16 +293,15 @@ bool xCollision(sprite_id sprite1, sprite_id sprite2){
 // Y-value collision detection.
 bool yCollision(sprite_id sprite1, sprite_id sprite2){
   // Sprite 1.
-  sprite1Bottom = round(sprite_y(sprite1)) + HERO_HEIGHT; // ### fix here for Y value on plat ( I think )
+  sprite1Bottom = round(sprite_y(sprite1)) + HERO_HEIGHT;
   sprite1Top = round(sprite_y(sprite1));
   // Sprite 2.
-  sprite2Bottom = round(sprite_y(sprite2)); // stops head from glitching
+  sprite2Bottom = round(sprite_y(sprite2));
   sprite2Top = round(sprite_y(sprite2));
-  if (air == true && sprite1Bottom == sprite2Top + 1) { // ### collision detected when you jump off
+  if (air == true && sprite1Bottom == sprite2Top + 1) {
     roof = false; ground = true; return true;
   }
   else if (sprite1Bottom == sprite2Top) {
-  // if (sprite1Bottom == sprite2Top) {
     roof = false; ground = true; return true;
   }
   // If collision with bottom of platform.
@@ -248,7 +313,7 @@ bool yCollision(sprite_id sprite1, sprite_id sprite2){
   }
 }
 
-// Checks all user movements and inputs.
+// All user movement and collision checks.
 void moveChar(void){
   // User input.
   int key = get_char();
@@ -265,11 +330,13 @@ void moveChar(void){
             sprite_back(hero);
             dy += gravity;
             velocity = 0;
+             if (air == true) sprite_set_image(hero, charAir);
           }
           else if (ground == true){
             if (air == true) {
               sprite_back(hero);
             }
+            sprite_set_image(hero, charGround);
             dy = 0;
             air = false;
           }
@@ -277,11 +344,9 @@ void moveChar(void){
       }
     }
   // Gravity if character is in air.
-  if (ground == false && roof == false) { // ### fix here for bug with jumping off platform.
+  if (ground == false && roof == false) {
     dy += gravity;
-    // hero = sprite_create(sprite_y(hero), sprite_x(hero), HERO_WIDTH, HERO_HEIGHT, charAir);
-    // ### Check to see if this collides with other DY
-    // and that is why bug is occuring.
+    sprite_set_image(hero, charAir);
   }
   // Wall collision.
   if (sprite1Right > screen_width() - 3 || sprite1Left < 1){
@@ -289,7 +354,12 @@ void moveChar(void){
     dx = 0;
     velocity = 0;
     sprite_back(hero);
-  } // ### changing this to else if fixes level 1 platform glitch but destroys character movement
+  }
+  else if (sprite1Bottom > screen_height() + 3) {
+    lives -= 1;
+    dx = 0;
+    destroyGame();
+  }
   // Roof collision.
   else if (sprite_y(hero) <= 3) {
     dy += gravity;
@@ -308,7 +378,6 @@ void moveChar(void){
     destroyGame();
   }
   // Else, continue with user controls.
-  // else if (air == true && ground == false && roof == false && dy >) dy = 0;
   else {
     if (air == false){
       // Checks for left arrow input.
@@ -354,6 +423,7 @@ void moveChar(void){
       else if (key == KEY_UP){
           air = true;
           dy = -1.7;
+          sprite_set_image(hero, charAir);
 
       }
     }
@@ -368,10 +438,8 @@ void createExit(void){
 
 // Ends game when player reaches end or runs out of lives.
 void endGame(void){
-  if (lives == 0 || level >= 6) {
-    destroyGame();
+  int key = get_char();
 
-  }
 }
 
 // Draws components of game.
@@ -385,7 +453,7 @@ void drawGame(void) {
   sprite_draw(enemy);
 }
 
-// Game hud.
+// Initialise game hud.
 void gameHud(void) {
   int width = screen_width() / 4;
   draw_formatted(2, 1, "Time: %02d:%02d", minutes, seconds);
@@ -394,7 +462,7 @@ void gameHud(void) {
   draw_formatted(width * 3, 1, "Score: %d", score);
 }
 
-// Initialise Timer
+// Initialise Timer.
 void timer(void) {
   timeCounter++;
 	if (timeCounter == 100) {
@@ -431,13 +499,12 @@ void display_debug_data() {
   draw_formatted(5, 8, "S1: top: %02d , bottom: %02d, right: %02d, left: %02d",sprite1Top, sprite1Bottom, sprite1Right, sprite1Left );
   draw_formatted(5, 9, "S2: bottom: %02d , top: %02d, right: %02d, left: %02d",sprite2Bottom, sprite2Top, sprite2Right, sprite2Left );
 
-  if (xCollision(hero, platform[1]) == true && yCollision(hero, platform[1]) == true) draw_string(50, 3, "Collision detected (X & Y)");
-  else if (xCollision(hero, platform[0])) draw_string(50, 3, "Collision detected (X)");
-  else if (yCollision(hero, platform[0])) draw_string(50, 3, "Collision detected (Y)");
+  // if (xCollision(hero, platform[1]) == true && yCollision(hero, platform[2]) == true) draw_string(50, 3, "Collision detected (X & Y)");
+  // else if (xCollision(hero, platform[2])) draw_string(50, 3, "Collision detected (X)");
+  // else if (yCollision(hero, platform[2])) draw_string(50, 3, "Collision detected (Y)");
 
   if (ground == true) draw_string(50, 5, "colliding with ground");
   else draw_string(50, 5, "not colliding with ground");
-  // draw_formatted(35, 7, "Enemy Left: %02d , Enemy Right = %02d", round(sprite_x(enemy)), round(sprite_x(enemy) + sprite_width(enemy)));
   draw_formatted(45, 7, "Enemy dx: %02d , Enemy dy = %02d",Edx, Edy);
   if (roof == true) draw_string(50, 4, "colliding with roof");
   else draw_string(50, 4, "not colliding with roof");
@@ -448,20 +515,25 @@ void display_debug_data() {
 
 // Play one turn of game.
 void process(void) {
-  // Clear current Frame & then redraw.
-  clear_screen();
-  // Create game.
-  drawGame();
-  // Enemy movement.
-  enemyMovement(enemy);
-  sprite_turn_to(enemy, Edx, round(Edy));
-  sprite_step(enemy);
-  // Character movement.
-  moveChar();
-  sprite_turn_to(hero, dx, round(dy));
-  sprite_step(hero);
-  // Debugger.
-  display_debug_data();
+  if (lives > 0 || level < 5) {
+    // Clear current Frame & then redraw.
+    clear_screen();
+    // Create game.
+    drawGame();
+    // Enemy movement.
+    enemyMovement(enemy);
+    sprite_turn_to(enemy, Edx, round(Edy));
+    sprite_step(enemy);
+    // Character movement.
+    moveChar();
+    sprite_turn_to(hero, dx, round(dy));
+    sprite_step(hero);
+    // Debugger.
+    display_debug_data();
+  }
+  else {
+
+  }
 }
 
 // Initial setup.
@@ -472,8 +544,6 @@ void setup(void) {
   enemy = sprite_create(screen_width() - 9, screen_height() - 5, 4, 4, zombieEnemy);
   // Draw the game.
   drawGame();
-  // Display Screen.
-	show_screen();
 }
 
 // Main loop.
