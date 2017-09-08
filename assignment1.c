@@ -34,7 +34,7 @@ double dy = 0;
 double Edx = -0.15;
 int Edy = 0;
 double velocity = 0;
-double gravity = 0.07;
+double gravity = 0.04;
 int seconds = 0;
 int minutes = 0;
 int timeCounter = 0;
@@ -107,6 +107,16 @@ char * treasure3 =
 /**/ "'$'"
 /**/ "   ";
 
+char * seperator =
+/**/ "|"
+/**/ "|"
+/**/ "|"
+/**/ "|"
+/**/ "|"
+/**/ "|"
+/**/ "|"
+/**/ "|";
+
 char * gateImg =
 /**/ "[]"
 /**/ "[]"
@@ -119,7 +129,7 @@ char * gateImg =
 
 // Declaring sprites.
 sprite_id hero; sprite_id enemy; sprite_id platform[10];
-sprite_id door;
+sprite_id door; sprite_id treasure;
 
 // Windows main borders.
 void drawArena(void) {
@@ -190,7 +200,6 @@ void DrawPlatforms() {
       platform[2] = initPlatforms(0, screen_height() - (2 + (HERO_HEIGHT * 7)), screen_width() * 0.65);
       platform[3] = initPlatforms(screen_width() * 0.35, screen_height() - (2 + (HERO_HEIGHT * 10.5)), screen_width());
       sprite_draw(platform[0]); sprite_draw(platform[1]); sprite_draw(platform[2]); sprite_draw(platform[3]); break;
-
     case 5:
     // Level 4.
     if (spriteDrawn == false) {
@@ -221,23 +230,23 @@ void destroyGame(void) {
 
 // Level treasure entity (if required).
 void treasureEnt(void) {
-  // switch (treasureVar) {
-  //   case 1:
-  //     sprite_set_image(treasure, treasure1);
-  //     treasureVar = 2;
-  //   case 2:
-  //     sprite_set_image(treasure, treasure2);
-  //     treasureVar = 3;
-  //   case 3:
-  //     sprite_set_image(treasure, treasure3);
-  //     treasureVar = 1;
-  // }
+  switch (treasureVar) {
+    case 1:
+      sprite_set_image(treasure, treasure1);
+      treasureVar = 2;
+    case 2:
+      sprite_set_image(treasure, treasure2);
+      treasureVar = 3;
+    case 3:
+      sprite_set_image(treasure, treasure3);
+      treasureVar = 1;
+  }
 
 }
 
 // Level key entity (if required).
 void keyEnt(void) {
-  //if (key == true) sprite_hide(gate);
+  // if (key == true) sprite_hide(key);
   // key = false;
   // ### add to destroy game function, destroy key and gate if needed
 }
@@ -338,14 +347,15 @@ void moveChar(void){
       if (yCollision(hero, platform[i])){
           if (roof == true){
             sprite_back(hero);
+            dy = 0;
             dy += gravity;
             velocity = 0;
-             if (air == true) sprite_set_image(hero, charAir);
+            if (air == true) sprite_set_image(hero, charAir);
           }
           else if (ground == true){
-            if (air == true) {
-              sprite_back(hero);
-            }
+            // if (air == true) { ### Used to be fix.
+            //   sprite_back(hero);
+            // }
             sprite_set_image(hero, charGround);
             dy = 0;
             air = false;
@@ -357,6 +367,11 @@ void moveChar(void){
   // Gravity if character is in air.
   if (ground == false && roof == false) {
     dy += gravity;
+  }
+  if (ground == false && roof == false && dy < 0) {
+    sprite_set_image(hero, charAir);
+  }
+  if (ground == false && roof == false && dy < 0) {
     sprite_set_image(hero, charAir);
   }
   // Wall collision.
@@ -370,24 +385,29 @@ void moveChar(void){
   else if (sprite1Bottom > screen_height() + 3) {
     lives -= 1;
     dx = 0;
+    velocity = 0;
     destroyGame();
   }
   // Roof collision.
   else if (sprite_y(hero) <= 3) {
+    dy = 0;
     dy += gravity;
     velocity = 0;
-    sprite_back(hero);
+    // sprite_back(hero);
   }
   // Enemy collision.
   else if (xCollision(hero, enemy) && yCollision(hero, enemy)){
     lives -= 1;
     dx = 0;
+    velocity = 0;
     destroyGame();
   }
   // Door collision.
   else if (xCollision(hero, door) && yCollision(hero, door)){
     level += 1;
     score += 100;
+    velocity = 0;
+    dx = 0;
     destroyGame();
   }
   // Else, continue with user controls.
@@ -435,7 +455,7 @@ void moveChar(void){
       // Checks for up arrow input.
       else if (key == KEY_UP){
           air = true;
-          dy = -0.8;
+          dy = -1;
           sprite_set_image(hero, charAir);
 
       }
@@ -458,9 +478,9 @@ void endGame(void) {
     draw_formatted(screen_width() * 0.3, (screen_height() * 0.5) + 1, "press any key to exit");
   }
   if (level >= 6) {
-    draw_formatted(screen_width() * 0.3, screen_height() * 0.5, "  You successfully completed the game. ");
+    draw_formatted(screen_width() * 0.3, screen_height() * 0.5, "You successfully completed the game!?!");
     draw_formatted(screen_width() * 0.3, (screen_height() * 0.5) + 1, "Congraulations! Your final score is %d", score);
-    draw_formatted(screen_width() * 0.3, (screen_height() * 0.5) + 1, "press any key to exit");
+    draw_formatted(screen_width() * 0.3, (screen_height() * 0.5) + 2, "     press any key to exit");
   }
   show_screen();
   game_over = true;
@@ -504,40 +524,6 @@ void timer(void) {
 	}
 }
 
-// Prints Debug information to screen.
-void display_debug_data() {
-  double dx = sprite_dx(hero);
-  double dy = sprite_dy(hero);
-  int Edx = sprite_dx(enemy);
-  int Edy = sprite_dy(enemy);
-  int x = sprite_x(hero);
-  int y = sprite_y(hero);
-  draw_string(5,3, "Debug Data");
-  draw_string(5,4, "Player dx: ");
-  draw_double(20, 4, dx);
-  draw_string(5,5, "Player dy: ");
-  draw_double(20, 5, dy);
-  draw_string(5,6, "Player X pos: ");
-  draw_int(20, 6, x);
-  draw_string(5,7, "Player Y pos: ");
-  draw_int(20, 7, y);
-  draw_formatted(5, 8, "S1: top: %02d , bottom: %02d, right: %02d, left: %02d",sprite1Top, sprite1Bottom, sprite1Right, sprite1Left );
-  draw_formatted(5, 9, "S2: bottom: %02d , top: %02d, right: %02d, left: %02d",sprite2Bottom, sprite2Top, sprite2Right, sprite2Left );
-
-  // if (xCollision(hero, platform[1]) == true && yCollision(hero, platform[2]) == true) draw_string(50, 3, "Collision detected (X & Y)");
-  // else if (xCollision(hero, platform[2])) draw_string(50, 3, "Collision detected (X)");
-  // else if (yCollision(hero, platform[2])) draw_string(50, 3, "Collision detected (Y)");
-
-  if (ground == true) draw_string(50, 5, "colliding with ground");
-  else draw_string(50, 5, "not colliding with ground");
-  draw_formatted(45, 7, "Enemy dx: %02d , Enemy dy = %02d",Edx, Edy);
-  if (roof == true) draw_string(50, 4, "colliding with roof");
-  else draw_string(50, 4, "not colliding with roof");
-
-  if (air == true) draw_string(50, 6, "jumping");
-  else draw_string(50, 6, "not jumping");
-}
-
 // Play one turn of game.
 void process(void) {
   if (lives > 0 && level <= 5) {
@@ -553,8 +539,7 @@ void process(void) {
     moveChar();
     sprite_turn_to(hero, dx, round(dy));
     sprite_step(hero);
-    // Debugger.
-    // display_debug_data();
+
   }
   else {
     endGame();
