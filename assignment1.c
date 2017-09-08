@@ -106,6 +106,7 @@ char * treasure3 =
 /**/ "   "
 /**/ "'$'"
 /**/ "   ";
+
 char * gateImg =
 /**/ "[]"
 /**/ "[]"
@@ -156,13 +157,12 @@ void DrawPlatforms() {
         hero = sprite_create(2 + HERO_WIDTH, screen_height()-HERO_HEIGHT-1, HERO_WIDTH, HERO_HEIGHT, charGround);
         enemy = sprite_create(screen_width() - 9, screen_height() - 4, 3, 2, batEnemy1);
         spriteDrawn = true;
+        platform[0] = initPlatforms(0, screen_height() - 1, screen_width());
+        platform[1] = initPlatforms((screen_width() * 0.3), screen_height() - (1 + (HERO_HEIGHT * 2)), (screen_width() * 0.3));
+        platform[2] = initPlatforms((screen_width() * 0.35), screen_height() - (2 + (HERO_HEIGHT * 4)), (screen_width() * 0.2));
       }
       platformAmount = 2;
-      platform[0] = initPlatforms(0, screen_height() - 1, screen_width());
-      platform[1] = initPlatforms((screen_width() * 0.3), screen_height() - (1 + (HERO_HEIGHT * 2)), (screen_width() * 0.3));
-      // platform[1] = initPlatforms((screen_width() * 0.3), screen_height() - (1 + (HERO_HEIGHT * 3.5)), (screen_width() * 0.3));
-      platform[2] = initPlatforms((screen_width() * 0.35), screen_height() - (2 + (HERO_HEIGHT * 4)), (screen_width() * 0.2));
-      // platform[2] = initPlatforms((screen_width() * 0.3), screen_height() - (2 + (HERO_HEIGHT * 7)), (screen_width() * 0.2));
+
       sprite_draw(platform[0]); sprite_draw(platform[1]); sprite_draw(platform[2]); break;
     case 3:
       // level 3.
@@ -181,21 +181,30 @@ void DrawPlatforms() {
       // Level 4.
       if (spriteDrawn == false) {
         hero = sprite_create(2 + HERO_WIDTH, screen_height()-HERO_HEIGHT-1, HERO_WIDTH, HERO_HEIGHT, charGround);
+        enemy = sprite_create(screen_width() - 9, (screen_height() - (2 + (HERO_HEIGHT * 7) - 1)), 3, 2, batEnemy1);
         spriteDrawn = true;
       }
-      // ### change value from 2 * (n) to 3.5 * (n) where n is number of platfroms vertically
       platformAmount = 3;
       platform[0] = initPlatforms(0, screen_height() - 1, screen_width());
       platform[1] = initPlatforms(screen_width() * 0.35, screen_height() - (2 + (HERO_HEIGHT * 2)), screen_width());
       platform[2] = initPlatforms(0, screen_height() - (2 + (HERO_HEIGHT * 4)), screen_width() * 0.65);
       platform[3] = initPlatforms(screen_width() * 0.35, screen_height() - (2 + (HERO_HEIGHT * 6)), screen_width());
       sprite_draw(platform[0]); sprite_draw(platform[1]); sprite_draw(platform[2]); sprite_draw(platform[3]); break;
+
     case 5:
-      // Level 5.
-      break;
-    // case 6:
-    //   break;
-    //   // ### End game here
+    // Level 4.
+    if (spriteDrawn == false) {
+      hero = sprite_create(2 + HERO_WIDTH, screen_height()-HERO_HEIGHT-1, HERO_WIDTH, HERO_HEIGHT, charGround);
+      enemy = sprite_create(screen_width() - 9, (screen_height() - (2 + (HERO_HEIGHT * 7) - 1)), 3, 2, batEnemy1);
+      spriteDrawn = true;
+    }
+    platformAmount = 3;
+    platform[0] = initPlatforms(0, screen_height() - 1, screen_width());
+    platform[1] = initPlatforms(screen_width() * 0.35, screen_height() - (2 + (HERO_HEIGHT * 2)), screen_width());
+    platform[2] = initPlatforms(0, screen_height() - (2 + (HERO_HEIGHT * 4)), screen_width() * 0.65);
+    platform[3] = initPlatforms(screen_width() * 0.35, screen_height() - (2 + (HERO_HEIGHT * 6)), screen_width());
+    sprite_draw(platform[0]); sprite_draw(platform[1]); sprite_draw(platform[2]); sprite_draw(platform[3]); break;
+
   }
 }
 
@@ -209,8 +218,8 @@ void destroyGame(void) {
   spriteDrawn = false;
 }
 
-// Level Treasure (if required).
-void treasure(void) {
+// Level treasure entity (if required).
+void treasureEnt(void) {
   // switch (treasureVar) {
   //   case 1:
   //     sprite_set_image(treasure, treasure1);
@@ -225,8 +234,8 @@ void treasure(void) {
 
 }
 
-// Level key (if required).
-void key(void) {
+// Level key entity (if required).
+void keyEnt(void) {
   //if (key == true) sprite_hide(gate);
   // key = false;
   // ### add to destroy game function, destroy key and gate if needed
@@ -343,6 +352,7 @@ void moveChar(void){
         }
       }
     }
+
   // Gravity if character is in air.
   if (ground == false && roof == false) {
     dy += gravity;
@@ -437,9 +447,18 @@ void createExit(void){
  }
 
 // Ends game when player reaches end or runs out of lives.
-void endGame(void){
+void endGame(void) {
   int key = get_char();
-
+  if (lives == 0) {
+    draw_formatted(screen_width() * 0.5, screen_height() * 0.5, "You have ran out of lives... Game Over!");
+  }
+  if (level == 6) {
+    draw_formatted(screen_width() * 0.5, screen_height() * 0.5, "You successfully completed the game. Congraulations!");
+    draw_formatted(screen_width() * 0.5, (screen_height() * 0.5) + 1, "Your final score is {0}", score);
+  }
+  do {
+  } while (!key);
+  game_over = true;
 }
 
 // Draws components of game.
@@ -515,7 +534,7 @@ void display_debug_data() {
 
 // Play one turn of game.
 void process(void) {
-  if (lives > 0 || level < 5) {
+  if (lives > 0 && level <= 5) {
     // Clear current Frame & then redraw.
     clear_screen();
     // Create game.
@@ -532,7 +551,7 @@ void process(void) {
     display_debug_data();
   }
   else {
-
+    endGame();
   }
 }
 
