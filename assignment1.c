@@ -199,7 +199,7 @@ void DrawPlatforms() {
       if (spriteDrawn == false) {
         hero = sprite_create(2 + HERO_WIDTH, screen_height()-HERO_HEIGHT-1, HERO_WIDTH, HERO_HEIGHT, charGround);
         enemy = sprite_create(screen_width() - 9, screen_height() - 4, 3, 2, batEnemy1);
-        treasure = sprite_create(screen_width() * 0.5, (8 + (HERO_HEIGHT * 7)), 3, 3, treasure1);
+        treasure = sprite_create(screen_width() * 0.5, (1 + (HERO_HEIGHT * 7)), 3, 3, treasure1);
         spriteDrawn = true; right = false; left = false; treasureColl = false;
         platform[0] = initPlatforms(0, screen_height() - 1, screen_width());
         platform[1] = initPlatforms((screen_width() * 0.3), screen_height() - (1 + (HERO_HEIGHT * 3.5)), (screen_width() * 0.4));
@@ -213,7 +213,7 @@ void DrawPlatforms() {
       if (spriteDrawn == false) {
         hero = sprite_create(2 + HERO_WIDTH, screen_height()-HERO_HEIGHT-1, HERO_WIDTH, HERO_HEIGHT, charGround);
         enemy = sprite_create(screen_width() - 9, (screen_height() - (2 + (HERO_HEIGHT * 7) + 3)), 3, 2, batEnemy1);
-        treasure = sprite_create(screen_width() * 0.5, (8 + (HERO_HEIGHT * 7)), 3, 3, treasure1);
+        treasure = sprite_create(screen_width() * 0.5, (1 + (HERO_HEIGHT * 7)), 3, 3, treasure1);
         spriteDrawn = true; right = false; left = false; treasureColl = false;
       }
       platformAmount = 3;
@@ -286,6 +286,27 @@ void treasureEnt(void) {
         sprite_set_image(treasure, treasure3);
         treasureVar = 1;
   }
+}
+
+// Creates box collision around sprites.
+bool boxCollision(sprite_id sprite1, sprite_id sprite2) {
+    int spr1Bottom = round(sprite_y(sprite1)  + sprite_height(sprite1) -1);
+    int spr1Top = round(sprite_y(sprite1));
+    int spr1Left = round(sprite_x(sprite1));
+    int spr1Right = round(sprite_x(sprite1) + sprite_width(sprite1) - 1);
+
+    int spr2Bottom = round(sprite_y(sprite2)  + sprite_height(sprite2) -1);
+    int spr2Top = round(sprite_y(sprite2));
+    int spr2Left= round(sprite_x(sprite2));
+    int spr2Right = round(sprite_x(sprite2) + sprite_width(sprite2) - 1);
+
+    // if any of these do not coincide, then return true
+    if (spr1Bottom < spr2Top || spr1Top > spr2Bottom || spr1Right < spr2Left|| spr1Left > spr2Right) {
+        return false;
+    }
+        else {
+            return true;
+    }
 }
 
 // Level key entity (if required).
@@ -439,7 +460,13 @@ void moveChar(void){
       }
     }
   }
-
+  // Roof collision.
+  if (sprite_y(hero) <= 3) {
+    dy = 0;
+    dy += gravity;
+    velocity = 0;
+    sprite_back(hero);
+  }
   // Key collision.
   if (level == 4 || level == 5) {
     if (!keyColl) {
@@ -448,8 +475,8 @@ void moveChar(void){
         sprite_hide(keyS);
       }
     }
-    if (xCollision(hero, gate) && yCollision(hero, gate)){
-      if (keyColl){
+    if (boxCollision(hero, gate)) {
+      if (keyColl) {
         sprite_hide(gate);
       }
       else {
@@ -479,15 +506,8 @@ void moveChar(void){
     velocity = 0;
     destroyGame();
   }
-  // Roof collision.
-  else if (sprite_y(hero) <= 3) {
-    dy = 0;
-    dy += gravity;
-    velocity = 0;
-    // sprite_back(hero);
-  }
   // Enemy collision.
-  else if (xCollision(hero, enemy) && yCollision(hero, enemy)){
+  else if (boxCollision(hero, enemy)){
     if (treasureColl) score -= 50;
     lives -= 1;
     dx = 0;
