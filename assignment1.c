@@ -12,7 +12,7 @@
 // Fix when you jump into right of platform you glitch out of map
 
 // Configuration.
-#define DELAY (10)
+#define DELAY (20)
 #define HERO_WIDTH (3)
 #define HERO_HEIGHT (3)
 #define PLATFORM_HEIGHT (1)
@@ -34,7 +34,7 @@ double dy = 0;
 double Edx = -0.15;
 int Edy = 0;
 double velocity = 0;
-double gravity = 0.1;
+double gravity = 0.07;
 int seconds = 0;
 int minutes = 0;
 int timeCounter = 0;
@@ -84,7 +84,7 @@ char * zombieEnemy =
 /**/	"ZZZZ";
 
 char * platformBase =
-/**/ "==========================================================================================================================";
+/**/ "==================================================================================================================================================================================";
 
 char * exitImg =
 /**/ "EXIT"
@@ -145,7 +145,7 @@ void DrawPlatforms() {
         // Set up zombie at the right of the screen.
         enemy = sprite_create(screen_width() - 9, screen_height() - 5, 4, 4, zombieEnemy);
         // Resetting value.
-        spriteDrawn = true;
+        spriteDrawn = true; right = false; left = false;
       }
       platform[0] = initPlatforms(0, screen_height() - 1, screen_width());
       platform[1] = initPlatforms((screen_width() * 0.3), screen_height() - (1 + (HERO_HEIGHT * 3.5)), (screen_width() * 0.3));
@@ -156,10 +156,10 @@ void DrawPlatforms() {
       if (spriteDrawn == false) {
         hero = sprite_create(2 + HERO_WIDTH, screen_height()-HERO_HEIGHT-1, HERO_WIDTH, HERO_HEIGHT, charGround);
         enemy = sprite_create(screen_width() - 9, screen_height() - 4, 3, 2, batEnemy1);
-        spriteDrawn = true;
+        spriteDrawn = true; right = false; left = false;
         platform[0] = initPlatforms(0, screen_height() - 1, screen_width());
-        platform[1] = initPlatforms((screen_width() * 0.3), screen_height() - (1 + (HERO_HEIGHT * 2)), (screen_width() * 0.3));
-        platform[2] = initPlatforms((screen_width() * 0.35), screen_height() - (2 + (HERO_HEIGHT * 4)), (screen_width() * 0.2));
+        platform[1] = initPlatforms((screen_width() * 0.3), screen_height() - (1 + (HERO_HEIGHT * 3.5)), (screen_width() * 0.4));
+        platform[2] = initPlatforms((screen_width() * 0.45), screen_height() - (2 + (HERO_HEIGHT * 7)), (screen_width() * 0.1));
       }
       platformAmount = 2;
 
@@ -168,27 +168,27 @@ void DrawPlatforms() {
       // level 3.
       if (spriteDrawn == false) {
         hero = sprite_create(2 + HERO_WIDTH, screen_height()-HERO_HEIGHT-1, HERO_WIDTH, HERO_HEIGHT, charGround);
-        enemy = sprite_create(screen_width() - 9, (screen_height() - (2 + (HERO_HEIGHT * 7) - 1)), 3, 2, batEnemy1);
-        spriteDrawn = true;
+        enemy = sprite_create(screen_width() - 9, (screen_height() - (2 + (HERO_HEIGHT * 7) + 3)), 3, 2, batEnemy1);
+        spriteDrawn = true; right = false; left = false;
       }
       platformAmount = 3;
       platform[0] = initPlatforms(0, screen_height() - 1, screen_width() * 0.25);
       platform[1] = initPlatforms(screen_width() * 0.75, screen_height() - 1, screen_width() * 0.25);
       platform[2] = initPlatforms(screen_width() * 0.25, screen_height() - (2 + (HERO_HEIGHT * 3.5)), (screen_width() * 0.5));
-      platform[3] = initPlatforms(screen_width() * 0.40, screen_height() - (2 + (HERO_HEIGHT * 7)), (screen_width() * 0.5));
+      platform[3] = initPlatforms(screen_width() * 0.40, screen_height() - (2 + (HERO_HEIGHT * 7)), (screen_width() * 0.20));
       sprite_draw(platform[0]); sprite_draw(platform[1]); sprite_draw(platform[2]); sprite_draw(platform[3]); break;
     case 4:
       // Level 4.
       if (spriteDrawn == false) {
         hero = sprite_create(2 + HERO_WIDTH, screen_height()-HERO_HEIGHT-1, HERO_WIDTH, HERO_HEIGHT, charGround);
-        enemy = sprite_create(screen_width() - 9, (screen_height() - (2 + (HERO_HEIGHT * 7) - 1)), 3, 2, batEnemy1);
-        spriteDrawn = true;
+        enemy = sprite_create(-20, -20, 3, 2, batEnemy1);
+        spriteDrawn = true; right = false; left = false;
       }
       platformAmount = 3;
       platform[0] = initPlatforms(0, screen_height() - 1, screen_width());
-      platform[1] = initPlatforms(screen_width() * 0.35, screen_height() - (2 + (HERO_HEIGHT * 2)), screen_width());
-      platform[2] = initPlatforms(0, screen_height() - (2 + (HERO_HEIGHT * 4)), screen_width() * 0.65);
-      platform[3] = initPlatforms(screen_width() * 0.35, screen_height() - (2 + (HERO_HEIGHT * 6)), screen_width());
+      platform[1] = initPlatforms(screen_width() * 0.35, screen_height() - (2 + (HERO_HEIGHT * 3.5)), screen_width());
+      platform[2] = initPlatforms(0, screen_height() - (2 + (HERO_HEIGHT * 7)), screen_width() * 0.65);
+      platform[3] = initPlatforms(screen_width() * 0.35, screen_height() - (2 + (HERO_HEIGHT * 10.5)), screen_width());
       sprite_draw(platform[0]); sprite_draw(platform[1]); sprite_draw(platform[2]); sprite_draw(platform[3]); break;
 
     case 5:
@@ -196,17 +196,16 @@ void DrawPlatforms() {
     if (spriteDrawn == false) {
       hero = sprite_create(2 + HERO_WIDTH, screen_height()-HERO_HEIGHT-1, HERO_WIDTH, HERO_HEIGHT, charGround);
       enemy = sprite_create(screen_width() - 9, (screen_height() - (2 + (HERO_HEIGHT * 7) - 1)), 3, 2, batEnemy1);
-      spriteDrawn = true;
+      spriteDrawn = true; right = false; left = false;
     }
     platformAmount = 4;
-    platform[0] = initPlatforms(0, screen_height() - 1, screen_width() * 0.70); // ### 0.70 is end of platform
-    platform[1] = initPlatforms(screen_width() * 0.35, screen_height() - (2 + (HERO_HEIGHT * 2)), screen_width());
-    platform[2] = initPlatforms(0, screen_height() - (2 + (HERO_HEIGHT * 4)), screen_width() * 0.65);
-    platform[3] = initPlatforms(screen_width() * 0.35, screen_height() - (2 + (HERO_HEIGHT * 6)), screen_width());
-    platform[4] = initPlatforms(screen_width() * 0.80, screen_height() - 1, screen_width() * 0.20); // 0.80 is start of platform
+    platform[0] = initPlatforms(0, screen_height() - 1, screen_width() * 0.70); // ### 0.70 is end of platform.
+    platform[1] = initPlatforms(screen_width() * 0.35, screen_height() - (2 + (HERO_HEIGHT * 3.5)), screen_width());
+    platform[2] = initPlatforms(0, screen_height() - (2 + (HERO_HEIGHT * 7)), screen_width() * 0.65);
+    platform[3] = initPlatforms(screen_width() * 0.35, screen_height() - (2 + (HERO_HEIGHT * 10.5)), screen_width());
+    platform[4] = initPlatforms(screen_width() * 0.80, screen_height() - 1, screen_width() * 0.20); // ### 0.80 is start of platform.
     sprite_draw(platform[0]); sprite_draw(platform[1]); sprite_draw(platform[2]); sprite_draw(platform[3]); sprite_draw(platform[4]);
     break;
-
   }
 }
 
@@ -367,6 +366,7 @@ void moveChar(void){
     velocity = 0;
     sprite_back(hero);
   }
+  // If sprite falls through map.
   else if (sprite1Bottom > screen_height() + 3) {
     lives -= 1;
     dx = 0;
@@ -381,6 +381,7 @@ void moveChar(void){
   // Enemy collision.
   else if (xCollision(hero, enemy) && yCollision(hero, enemy)){
     lives -= 1;
+    dx = 0;
     destroyGame();
   }
   // Door collision.
@@ -434,7 +435,7 @@ void moveChar(void){
       // Checks for up arrow input.
       else if (key == KEY_UP){
           air = true;
-          dy = -1.7;
+          dy = -0.8;
           sprite_set_image(hero, charAir);
 
       }
@@ -450,17 +451,20 @@ void createExit(void){
 
 // Ends game when player reaches end or runs out of lives.
 void endGame(void) {
-  int key = get_char();
-  if (lives == 0) {
-    draw_formatted(screen_width() * 0.5, screen_height() * 0.5, "You have ran out of lives... Game Over!");
+  show_screen();
+  clear_screen();
+  if (lives <= 0) {
+    draw_formatted(screen_width() * 0.3, screen_height() * 0.5, "You have ran out of lives... Game Over!");
+    draw_formatted(screen_width() * 0.3, (screen_height() * 0.5) + 1, "press any key to exit");
   }
-  if (level == 6) {
-    draw_formatted(screen_width() * 0.5, screen_height() * 0.5, "You successfully completed the game. Congraulations!");
-    draw_formatted(screen_width() * 0.5, (screen_height() * 0.5) + 1, "Your final score is {0}", score);
+  if (level >= 6) {
+    draw_formatted(screen_width() * 0.3, screen_height() * 0.5, "  You successfully completed the game. ");
+    draw_formatted(screen_width() * 0.3, (screen_height() * 0.5) + 1, "Congraulations! Your final score is %d", score);
+    draw_formatted(screen_width() * 0.3, (screen_height() * 0.5) + 1, "press any key to exit");
   }
-  do {
-  } while (!key);
+  show_screen();
   game_over = true;
+  wait_char();
 }
 
 // Draws components of game.
@@ -550,7 +554,7 @@ void process(void) {
     sprite_turn_to(hero, dx, round(dy));
     sprite_step(hero);
     // Debugger.
-    display_debug_data();
+    // display_debug_data();
   }
   else {
     endGame();
