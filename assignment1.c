@@ -6,14 +6,8 @@
 #include <curses.h>
 
 // TODO : ###
-// Zombie hitboxes on other levels (bats)
-// Add zombies to required max
-// Add dy physics to Zombie (level 5)
-// Fix when you jump into right of platform you glitch out of map
+// Fix when you jump into sides of a platform you glitch
 // implement character animation when falling off of platform
-// wall segment on lvl 3
-// gate level 4 & 5
-// Moving platform (level 5)
 
 // Configuration.
 #define DELAY (10)
@@ -35,6 +29,7 @@ bool switcher = true;
 bool spriteDrawn = false;
 bool treasureColl = false;
 bool keyColl = false;
+bool enemySpawn = false;
 double dx = 0;
 double dy = 0;
 double Edx = -0.3;
@@ -251,7 +246,7 @@ void DrawPlatforms() {
       spriteDrawn = true; right = false; left = false; treasureColl = false; keyColl = false;
     }
     platformAmount = 4;
-    platform[0] = initPlatforms(0, screen_height() - 1, screen_width() * 0.70); // ### 0.70 is end of platform.
+    platform[0] = initPlatforms(0, screen_height() - 1, screen_width() * 0.70);
     platform[1] = initPlatforms(screen_width() * 0.35, screen_height() - (2 + (HERO_HEIGHT * 3.5)), (screen_width()* 0.65) - 1);
     platform[3] = initPlatforms(screen_width() * 0.35, screen_height() - (2 + (HERO_HEIGHT * 10.5)), (screen_width()* 0.65) - 1);
     platform[4] = initPlatforms(screen_width() * 0.80, screen_height() - 1, screen_width() * 0.20);
@@ -414,21 +409,24 @@ void moveChar(void){
   for (int i = 0; i <= platformAmount; i++){
     if (xCollision(hero, platform[i])){
       if (yCollision(hero, platform[i])){
-          if (roof == true){
-            sprite_back(hero);
-            dy = 0;
-            dy += gravity;
-            // velocity = 0;
-            if (air == true) sprite_set_image(hero, charAir);
-          }
-          else if (ground == true){
-            sprite_set_image(hero, charGround);
-            dy = 0;
-            air = false;
-          }
+        if (ground == true && roof == true){
+          sprite_back(hero);
+          dx = 0;
+        }
+        else if (roof == true){
+          sprite_back(hero);
+          dy = 0;
+          dy += gravity;
+          if (air == true) sprite_set_image(hero, charAir);
+        }
+        else if (ground == true){
+          sprite_set_image(hero, charGround);
+          dy = 0;
+          air = false;
         }
       }
     }
+  }
   // Gravity if character is in air.
   if (ground == false && roof == false) {
     dy += gravity;
@@ -646,71 +644,29 @@ void platformColl(sprite_id sprite) {
     sprite_step(platform[2]);
 }
 
-bool platform3 = false;
-bool platform2 = false;
-bool platform1 = false;
-bool platform0 = false;
-
 // Enemy collision (Including gravity).
 void enemyColl(sprite_id sprite) {
+  // Initial velocity.
+  if (enemySpawn == false) Edx = -0.6;
   Edy = 1;
-  // Don't hate the hard code, hate the game.
-  // if (boxCollision(sprite, platform[3]) || boxCollision(sprite, platform[2]) || boxCollision(sprite, platform[2])
-  // || boxCollision(sprite, platform[1]) || boxCollision(sprite, platform[0])) {
-  //   Edy = 0;
-  //   sprite_back(sprite);
-  // } else Edy = 1;
-  // Collision checks between platform/s and hero.
+  // Checks all platforms for collision.
   for (int i = 0; i <= platformAmount; i++){
     if (xCollision(sprite, platform[i])){
       if (yCollision(sprite, platform[i])){
-          if (ground == true){
-            Edy = 0;
-          }
+        if (ground == true){
+          Edy = 0;
         }
-      // } else Edy = 1;
+      }
     }
   }
-
-  // if (boxCollision(sprite, platform[3])) {
-  //   if (!platform3) {
-  //     Edy = 0;
-  //     platform3 = true;
-  //     sprite_back(sprite);
-  //   }
-  //
-  // }
-  // else if (boxCollision(sprite, platform[2])) {
-  //   if (!platform2) {
-  //     Edy = 0;
-  //     platform2 = true;
-  //     sprite_back(sprite);
-  //   }
-  //
-  // }
-  // else if (boxCollision(sprite, platform[1])) {
-  //   if (!platform1) {
-  //     Edy = 0;
-  //     platform1 = true;
-  //     sprite_back(sprite);
-  //   }
-  //
-  // }
-  // else if (boxCollision(sprite, platform[0])) {
-  //   if (!platform0) {
-  //     Edy = 0;
-  //     platform0 = true;
-  //     sprite_back(sprite);
-  //   }
-  // }
-  // else Edy = 1;
-
-  if (sprite_x(sprite) < 1 && Edx == -0.3) {
-    Edx = 0.3;
+  // Enemy back and forth motion.
+  if (sprite_x(sprite) < 1 && Edx == -0.6) {
+    Edx = 0.6;
   }
-  else if (sprite_x(sprite) + sprite_width(sprite) + 1 >= screen_width() && Edx == 0.3) {
-    Edx = -0.3;
+  else if (sprite_x(sprite) + sprite_width(sprite) + 1 >= screen_width() && Edx == 0.6) {
+    Edx = -0.6;
   }
+  enemySpawn = true;
   sprite_turn_to(sprite, Edx, round(Edy));
   sprite_step(sprite);
 }
@@ -727,12 +683,13 @@ void process(void) {
       treasureEnt();
       sprite_draw(treasure);
     }
-    // Draw key.
+    // Draw key & gate.
     if (level == 4 || level == 5) {
       keyEnt();
       sprite_draw(keyS);
       sprite_draw(gate);
     }
+    // Draw moving platform.
     if (level == 5) {
       platformColl(platform[2]);
       enemyColl(enemy);
