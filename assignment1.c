@@ -38,6 +38,7 @@ bool keyColl = false;
 double dx = 0;
 double dy = 0;
 double Edx = -0.3;
+double Pdx = -0.2;
 int Edy = 0;
 double velocity = 0;
 double gravity = 0.04;
@@ -129,7 +130,7 @@ char * key3 =
 /**/ " O-+,"
 /**/ "     ";
 
-char * seperator =
+char * seperatorImg =
 /**/ "|"
 /**/ "|"
 /**/ "|"
@@ -162,7 +163,7 @@ char * gateImg =
 // Declaring sprites.
 sprite_id hero; sprite_id enemy; sprite_id platform[10];
 sprite_id door; sprite_id treasure; sprite_id keyS;
-sprite_id gate;
+sprite_id gate; sprite_id divider;
 
 // Windows main borders.
 void drawArena(void) {
@@ -203,7 +204,7 @@ void DrawPlatforms() {
         spriteDrawn = true; right = false; left = false; treasureColl = false;
         platform[0] = initPlatforms(0, screen_height() - 1, screen_width());
         platform[1] = initPlatforms((screen_width() * 0.3), screen_height() - (1 + (HERO_HEIGHT * 3.5)), (screen_width() * 0.4));
-        platform[2] = initPlatforms((screen_width() * 0.45), screen_height() - (2 + (HERO_HEIGHT * 7)), (screen_width() * 0.1));
+        platform[2] = initPlatforms((screen_width() * 0.45), screen_height() - (2 + (HERO_HEIGHT * 7)), (screen_width() * 0.12));
       }
       platformAmount = 2;
 
@@ -213,6 +214,7 @@ void DrawPlatforms() {
       if (spriteDrawn == false) {
         hero = sprite_create(2 + HERO_WIDTH, screen_height()-HERO_HEIGHT-1, HERO_WIDTH, HERO_HEIGHT, charGround);
         enemy = sprite_create(screen_width() - 9, (screen_height() - (2 + (HERO_HEIGHT * 7) + 3)), 3, 2, batEnemy1);
+        divider = sprite_create(screen_width() * 0.5, screen_height() - (1 + (HERO_HEIGHT * 7)), 1, HERO_HEIGHT * 3.5, seperatorImg);
         treasure = sprite_create(screen_width() * 0.5, (1 + (HERO_HEIGHT * 7)), 3, 3, treasure1);
         spriteDrawn = true; right = false; left = false; treasureColl = false;
       }
@@ -220,7 +222,7 @@ void DrawPlatforms() {
       platform[0] = initPlatforms(0, screen_height() - 1, screen_width() * 0.25);
       platform[1] = initPlatforms(screen_width() * 0.75, screen_height() - 1, screen_width() * 0.25);
       platform[2] = initPlatforms(screen_width() * 0.25, screen_height() - (2 + (HERO_HEIGHT * 3.5)), (screen_width() * 0.5));
-      platform[3] = initPlatforms(screen_width() * 0.40, screen_height() - (2 + (HERO_HEIGHT * 7)), (screen_width() * 0.20));
+      platform[3] = initPlatforms(screen_width() * 0.40, screen_height() - (2 + (HERO_HEIGHT * 7)), (screen_width() * 0.2));
       sprite_draw(platform[0]); sprite_draw(platform[1]); sprite_draw(platform[2]); sprite_draw(platform[3]); break;
     case 4:
       // Level 4.
@@ -228,7 +230,7 @@ void DrawPlatforms() {
         hero = sprite_create(2 + HERO_WIDTH, screen_height()-HERO_HEIGHT-1, HERO_WIDTH, HERO_HEIGHT, charGround);
         enemy = sprite_create(-20, -20, 3, 2, batEnemy1);
         keyS = sprite_create(screen_width() - 9, screen_height() - (8 + (HERO_HEIGHT * 10.5)), 5, 3, key1);
-        gate = sprite_create(screen_width() * 0.55, screen_height() - (1 + (HERO_HEIGHT * 3.5)), 2,  screen_height() - (2 + (HERO_HEIGHT * 3.5)), gateImg);
+        gate = sprite_create(screen_width() * 0.55, screen_height() - (1 + (HERO_HEIGHT * 3.5)), 2, HERO_HEIGHT * 3.5, gateImg);
         spriteDrawn = true; right = false; left = false; keyColl = false;
       }
       platformAmount = 3;
@@ -244,7 +246,7 @@ void DrawPlatforms() {
       enemy = sprite_create(screen_width() - 9, 2, 4, 2, boulderEnemy);
       treasure = sprite_create(screen_width() * 0.5, screen_height() - ((HERO_HEIGHT * 10.5)), 3, 3, treasure1);
       keyS = sprite_create(screen_width() - 9, screen_height() - (8 + (HERO_HEIGHT * 10.5)), 5, 3, key1);
-      gate = sprite_create(screen_width() * 0.55, screen_height() - (1 + (HERO_HEIGHT * 3.5)), 2,  screen_height() - (2 + (HERO_HEIGHT * 3.5)), gateImg);
+      gate = sprite_create(screen_width() * 0.55, screen_height() - (1 + (HERO_HEIGHT * 3.5)), 2,  HERO_HEIGHT * 3.5, gateImg);
       platform[2] = initPlatforms(1, screen_height() - (2 + (HERO_HEIGHT * 7)), screen_width() * 0.65);
       spriteDrawn = true; right = false; left = false; treasureColl = false; keyColl = false;
     }
@@ -467,6 +469,13 @@ void moveChar(void){
     velocity = 0;
     sprite_back(hero);
   }
+  if (level == 3) {
+    if (boxCollision(hero, divider)) {
+        dx = 0;
+        velocity = 0;
+        sprite_back(hero);
+    }
+  }
   // Key collision.
   if (level == 4 || level == 5) {
     if (!keyColl) {
@@ -516,7 +525,6 @@ void moveChar(void){
   }
   // Door collision.
   else if (xCollision(hero, door) && yCollision(hero, door)){
-    if (treasureColl) score -= 50;
     level += 1;
     score += 100;
     velocity = 0;
@@ -607,6 +615,7 @@ void drawGame(void) {
   DrawPlatforms();
   createExit();
   // Draws previously initialised sprites.
+  if (level == 3) sprite_draw(divider);
 	sprite_draw(hero);
   sprite_draw(enemy);
 }
@@ -636,6 +645,18 @@ void timer(void) {
 		}
 	}
 }
+// Zombie Collision level 5.
+void EnemyColl(sprite_id sprite) {
+    if (sprite_x(sprite) < 1) {
+      Pdx = 0.3;
+    }
+    else if (sprite_x(sprite) + sprite_width(sprite) + 1 >= screen_width()) {
+      Pdx = -0.3; // ### Potentially change this
+
+    }
+    sprite_turn_to(platform[2], Pdx, 0);
+    sprite_step(platform[2]); // ### FIX THIS FOR PLATFORM MOVEMENT
+}
 
 // Play one turn of game.
 void process(void) {
@@ -656,10 +677,7 @@ void process(void) {
       sprite_draw(gate);
     }
     if (level == 5) {
-      enemyMovement(platform[2]);
-      sprite_turn_to(platform[2], Edx, 0);
-      sprite_step(platform[2]); // ### FIX THIS FOR PLATFORM MOVEMENT
-      Edx = 0;
+      EnemyColl(platform[2]);
     }
     // Enemy movement.
     enemyMovement(enemy);
