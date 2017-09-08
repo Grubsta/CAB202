@@ -8,9 +8,12 @@
 // TODO : ###
 // Zombie hitboxes on other levels (bats)
 // Add zombies to required max
-// Add dy physics to Zombie
+// Add dy physics to Zombie (level 5)
 // Fix when you jump into right of platform you glitch out of map
 // implement character animation when falling off of platform
+// wall segment on lvl 3
+// gate level 4 & 5
+// Moving platform (level 5)
 
 // Configuration.
 #define DELAY (10)
@@ -99,32 +102,32 @@ char * exitImg =
 char * treasure1 =
 /**/ "'  "
 /**/ " $ "
-/**/ "  ,";
+/**/ " , ";
 
 char * treasure2 =
 /**/ "  '"
 /**/ " $ "
-/**/ ",  ";
+/**/ "   ";
 
 char * treasure3 =
 /**/ "   "
-/**/ "'$'"
+/**/ " $'"
 /**/ "   ";
 
 char * key1 =
-/**/ "  '  "
-/**/ " O-+ "
-/**/ ",    ";
+/**/ "     "
+/**/ "'O-+ "
+/**/ "   , ";
 
 char * key2 =
-/**/ "  '  "
+/**/ "    '"
 /**/ " O-+ "
-/**/ ",    ";
+/**/ "     ";
 
 char * key3 =
-/**/ "   ' "
-/**/ " O-+ "
-/**/ ",    ";
+/**/ "  '  "
+/**/ " O-+,"
+/**/ "     ";
 
 char * seperator =
 /**/ "|"
@@ -158,7 +161,7 @@ char * gateImg =
 
 // Declaring sprites.
 sprite_id hero; sprite_id enemy; sprite_id platform[10];
-sprite_id door; sprite_id treasure;
+sprite_id door; sprite_id treasure; sprite_id keyS;
 
 // Windows main borders.
 void drawArena(void) {
@@ -223,6 +226,7 @@ void DrawPlatforms() {
       if (spriteDrawn == false) {
         hero = sprite_create(2 + HERO_WIDTH, screen_height()-HERO_HEIGHT-1, HERO_WIDTH, HERO_HEIGHT, charGround);
         enemy = sprite_create(-20, -20, 3, 2, batEnemy1);
+        keyS = sprite_create(screen_width() - 9, screen_height() - (8 + (HERO_HEIGHT * 10.5)), 5, 3, key1);
         spriteDrawn = true; right = false; left = false; keyColl = false;
       }
       platformAmount = 3;
@@ -235,14 +239,15 @@ void DrawPlatforms() {
     // Level 4.
     if (spriteDrawn == false) {
       hero = sprite_create(2 + HERO_WIDTH, screen_height()-HERO_HEIGHT-1, HERO_WIDTH, HERO_HEIGHT, charGround);
-      enemy = sprite_create(screen_width() - 9, (screen_height() - (2 + (HERO_HEIGHT * 7) - 1)), 3, 2, batEnemy1);
-      treasure = sprite_create(screen_width() - 9, screen_height() - (8 + (HERO_HEIGHT * 10.5)), 3, 3, treasure1); // key should go here and be copied on level 4
+      enemy = sprite_create(screen_width() - 9, 2, 4, 2, boulderEnemy);
+      treasure = sprite_create(screen_width() * 0.5, screen_height() - ((HERO_HEIGHT * 10.5)), 3, 3, treasure1);
+      keyS = sprite_create(screen_width() - 9, screen_height() - (8 + (HERO_HEIGHT * 10.5)), 5, 3, key1);
       spriteDrawn = true; right = false; left = false; treasureColl = false; keyColl = false;
+      platform[2] = initPlatforms(0, screen_height() - (2 + (HERO_HEIGHT * 7)), screen_width() * 0.65);
     }
     platformAmount = 4;
     platform[0] = initPlatforms(0, screen_height() - 1, screen_width() * 0.70); // ### 0.70 is end of platform.
     platform[1] = initPlatforms(screen_width() * 0.35, screen_height() - (2 + (HERO_HEIGHT * 3.5)), screen_width());
-    platform[2] = initPlatforms(0, screen_height() - (2 + (HERO_HEIGHT * 7)), screen_width() * 0.65);
     platform[3] = initPlatforms(screen_width() * 0.35, screen_height() - (2 + (HERO_HEIGHT * 10.5)), screen_width());
     platform[4] = initPlatforms(screen_width() * 0.80, screen_height() - 1, screen_width() * 0.20); // ### 0.80 is start of platform.
     sprite_draw(platform[0]); sprite_draw(platform[1]); sprite_draw(platform[2]); sprite_draw(platform[3]); sprite_draw(platform[4]);
@@ -258,6 +263,7 @@ void destroyGame(void) {
   // if (level == 3 || 4 || 5) destroy key and treasure
   sprite_destroy(enemy); sprite_destroy(hero); sprite_destroy(door);
   if (level == 2 || level == 3 || level ==  5) sprite_destroy(treasure);
+  if (level == 4 || level == 5 ) sprite_destroy(keyS);
   spriteDrawn = false;
 }
 
@@ -279,18 +285,18 @@ void treasureEnt(void) {
 
 // Level key entity (if required).
 void keyEnt(void) {
-  // if (keyVar == 1) {
-  //       sprite_set_image(key, key1);
-  //       keyVar = 2;
-  // }
-  // else if (keyVar == 2) {
-  //       sprite_set_image(key, key2);
-  //       keyVar = 3;
-  // }
-  // else {
-  //       sprite_set_image(key, key3);
-  //       keyVar = 1;
-  // }
+  if (keyVar == 1) {
+        sprite_set_image(keyS, key1);
+        keyVar = 2;
+  }
+  else if (keyVar == 2) {
+        sprite_set_image(keyS, key2);
+        keyVar = 3;
+  }
+  else {
+        sprite_set_image(keyS, key3);
+        keyVar = 1;
+  }
 }
 
 // Wall collision detection.
@@ -316,25 +322,6 @@ void batAnimation(void) {
   else if (switcher == true) {
     sprite_set_image(enemy, batEnemy2);
     switcher = false;
-  }
-}
-
-// Function for enemy movement.
-void enemyMovement(sprite_id opponent) {
-  // Switch for bat animation.
-  if (level == 2 || level == 3 ){
-    batAnimation();
-  }
-  if (wallCollision(opponent)) {
-    if (sprite_x(opponent) < screen_width() * 0.5) {
-      Edx = 0.3;
-    }
-    else if (sprite_x(opponent) > screen_width() * 0.5) {
-      Edx = -0.3;
-    }
-  }
-  if (level == 5) {
-    // ### add dy physics here.
   }
 }
 
@@ -374,6 +361,36 @@ bool yCollision(sprite_id sprite1, sprite_id sprite2){
   }
 }
 
+// Function for enemy movement.
+void enemyMovement(sprite_id opponent) {
+  // Switch for bat animation.
+  Edy = 0;
+  if (level == 2 || level == 3 ){
+    batAnimation();
+  }
+  if (wallCollision(opponent)) {
+    if (sprite_x(opponent) < screen_width() * 0.5) {
+      Edx = 0.3;
+    }
+    else if (sprite_x(opponent) > screen_width() * 0.5) {
+      Edx = -0.3;
+    }
+  }
+  if (level == 5) {
+    for (int i = 0; i <= platformAmount; i++){
+      if (xCollision(opponent, platform[i])){
+        if (yCollision(opponent, platform[i])){
+          sprite_back(opponent);
+          Edy = 0;
+        }
+      }
+      else {
+        Edy = 0.7;
+      }
+    }
+  }
+}
+
 // All user movement and collision checks.
 void moveChar(void){
   // User input.
@@ -390,9 +407,6 @@ void moveChar(void){
             if (air == true) sprite_set_image(hero, charAir);
           }
           else if (ground == true){
-            // if (air == true) { ### Used to be fix.
-            //   sprite_back(hero);
-            // }
             sprite_set_image(hero, charGround);
             dy = 0;
             air = false;
@@ -412,11 +426,20 @@ void moveChar(void){
   }
   // Treasure collision.
   if (level == 2 || level == 3 || level == 5) {
-    if (!treasureColl){
-      if (xCollision(hero, treasure) && yCollision(hero, treasure)){
+    if (!treasureColl) {
+      if (xCollision(hero, treasure) && yCollision(hero, treasure)) {
         score += 50;
         treasureColl = true;
         sprite_hide(treasure);
+      }
+    }
+  }
+  // Key collision.
+  if (level == 4 || level == 5) {
+    if (!keyColl) {
+      if (xCollision(hero, keyS) && yCollision(hero, keyS)) {
+        keyColl = true;
+        sprite_hide(keyS);
       }
     }
   }
@@ -434,6 +457,7 @@ void moveChar(void){
   }
   // If sprite falls through map.
   else if (sprite1Bottom > screen_height() + 3) {
+    if (treasureColl) score -= 50;
     lives -= 1;
     dx = 0;
     velocity = 0;
@@ -448,14 +472,15 @@ void moveChar(void){
   }
   // Enemy collision.
   else if (xCollision(hero, enemy) && yCollision(hero, enemy)){
+    if (treasureColl) score -= 50;
     lives -= 1;
     dx = 0;
     velocity = 0;
     destroyGame();
   }
-
   // Door collision.
   else if (xCollision(hero, door) && yCollision(hero, door)){
+    if (treasureColl) score -= 50;
     level += 1;
     score += 100;
     velocity = 0;
@@ -588,6 +613,12 @@ void process(void) {
       treasureEnt();
       sprite_draw(treasure);
     }
+    // Draw key.
+    if (level == 4 || level == 5) {
+      keyEnt();
+      sprite_draw(keyS);
+    }
+  
     // Enemy movement.
     enemyMovement(enemy);
     sprite_turn_to(enemy, Edx, round(Edy));
