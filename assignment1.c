@@ -200,7 +200,7 @@ void DrawPlatforms() {
       if (spriteDrawn == false) {
         hero = sprite_create(2 + HERO_WIDTH, screen_height()-HERO_HEIGHT-1, HERO_WIDTH, HERO_HEIGHT, charGround);
         enemy = sprite_create(screen_width() - 9, screen_height() - 4, 3, 2, batEnemy1);
-        treasure = sprite_create(screen_width() * 0.5, (1 + (HERO_HEIGHT * 7)), 3, 3, treasure1);
+        treasure = sprite_create((screen_width() * 0.5) - 1, screen_height() - ((HERO_HEIGHT * 7) + 10), 3, 3, treasure1);
         spriteDrawn = true; right = false; left = false; treasureColl = false;
         platform[0] = initPlatforms(0, screen_height() - 1, screen_width());
         platform[1] = initPlatforms((screen_width() * 0.3), screen_height() - (1 + (HERO_HEIGHT * 3.5)), (screen_width() * 0.4));
@@ -215,7 +215,7 @@ void DrawPlatforms() {
         hero = sprite_create(2 + HERO_WIDTH, screen_height()-HERO_HEIGHT-1, HERO_WIDTH, HERO_HEIGHT, charGround);
         enemy = sprite_create(screen_width() - 9, (screen_height() - (2 + (HERO_HEIGHT * 7) + 3)), 3, 2, batEnemy1);
         divider = sprite_create(screen_width() * 0.5, screen_height() - (1 + (HERO_HEIGHT * 7)), 1, HERO_HEIGHT * 3.5, seperatorImg);
-        treasure = sprite_create(screen_width() * 0.5, (1 + (HERO_HEIGHT * 7)), 3, 3, treasure1);
+        treasure = sprite_create((screen_width() * 0.5) - 1, screen_height() - ((HERO_HEIGHT * 7) + 10), 3, 3, treasure1);
         spriteDrawn = true; right = false; left = false; treasureColl = false;
       }
       platformAmount = 3;
@@ -277,53 +277,53 @@ void destroyGame(void) {
 // Level treasure entity (if required).
 void treasureEnt(void) {
   if (treasureVar == 1) {
-        sprite_set_image(treasure, treasure1);
-        treasureVar = 2;
+    sprite_set_image(treasure, treasure1);
+    treasureVar = 2;
   }
   else if (treasureVar == 2) {
-        sprite_set_image(treasure, treasure2);
-        treasureVar = 3;
+    sprite_set_image(treasure, treasure2);
+    treasureVar = 3;
   }
   else {
-        sprite_set_image(treasure, treasure3);
-        treasureVar = 1;
+    sprite_set_image(treasure, treasure3);
+    treasureVar = 1;
   }
 }
 
 // Creates box collision around sprites.
 bool boxCollision(sprite_id sprite1, sprite_id sprite2) {
-    int spr1Bottom = round(sprite_y(sprite1)  + sprite_height(sprite1) -1);
-    int spr1Top = round(sprite_y(sprite1));
-    int spr1Left = round(sprite_x(sprite1));
-    int spr1Right = round(sprite_x(sprite1) + sprite_width(sprite1) - 1);
-
-    int spr2Bottom = round(sprite_y(sprite2)  + sprite_height(sprite2) -1);
-    int spr2Top = round(sprite_y(sprite2));
-    int spr2Left= round(sprite_x(sprite2));
-    int spr2Right = round(sprite_x(sprite2) + sprite_width(sprite2) - 1);
-
-    // if any of these do not coincide, then return true
-    if (spr1Bottom < spr2Top || spr1Top > spr2Bottom || spr1Right < spr2Left|| spr1Left > spr2Right) {
-        return false;
-    }
-        else {
-            return true;
-    }
+  // Sprite 1.
+  int spr1Bottom = round(sprite_y(sprite1)  + sprite_height(sprite1) -1);
+  int spr1Top = round(sprite_y(sprite1));
+  int spr1Left = round(sprite_x(sprite1));
+  int spr1Right = round(sprite_x(sprite1) + sprite_width(sprite1) - 1);
+  // Sprite 2.
+  int spr2Bottom = round(sprite_y(sprite2)  + sprite_height(sprite2) -1);
+  int spr2Top = round(sprite_y(sprite2));
+  int spr2Left= round(sprite_x(sprite2));
+  int spr2Right = round(sprite_x(sprite2) + sprite_width(sprite2) - 1);
+  // Creates a perimter arround sprites and checks for collision.
+  if (spr1Bottom < spr2Top || spr1Top > spr2Bottom || spr1Right < spr2Left|| spr1Left > spr2Right) {
+    return false;
+  }
+  else {
+    return true;
+  }
 }
 
 // Level key entity (if required).
 void keyEnt(void) {
   if (keyVar == 1) {
-        sprite_set_image(keyS, key1);
-        keyVar = 2;
+    sprite_set_image(keyS, key1);
+    keyVar = 2;
   }
   else if (keyVar == 2) {
-        sprite_set_image(keyS, key2);
-        keyVar = 3;
+    sprite_set_image(keyS, key2);
+    keyVar = 3;
   }
   else {
-        sprite_set_image(keyS, key3);
-        keyVar = 1;
+    sprite_set_image(keyS, key3);
+    keyVar = 1;
   }
 }
 
@@ -645,6 +645,7 @@ void timer(void) {
 		}
 	}
 }
+
 // Zombie Collision level 5.
 void EnemyColl(sprite_id sprite) {
     if (sprite_x(sprite) < 1) {
@@ -709,20 +710,15 @@ int main(void) {
   // Draw game environment.
   setup_screen();
 	setup();
-
 	while ( !game_over ) {
     // Continue drawing frames.
     process();
     timer();
     gameHud();
-
 		if ( update_screen ) {
 			show_screen();
-
 		}
-
 		timer_pause(DELAY);
 	}
-
 	return 0;
 }
