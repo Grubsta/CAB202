@@ -243,7 +243,7 @@ void DrawPlatforms() {
     // Level 4.
     if (spriteDrawn == false) {
       hero = sprite_create(2 + HERO_WIDTH, screen_height()-HERO_HEIGHT-1, HERO_WIDTH, HERO_HEIGHT, charGround);
-      enemy = sprite_create(screen_width() - 9, 2, 4, 2, boulderEnemy);
+      enemy = sprite_create(screen_width() - 9, 3, 4, 2, boulderEnemy);
       treasure = sprite_create(screen_width() * 0.5, screen_height() - ((HERO_HEIGHT * 10.5)), 3, 3, treasure1);
       keyS = sprite_create(screen_width() - 9, screen_height() - (8 + (HERO_HEIGHT * 10.5)), 5, 3, key1);
       gate = sprite_create(screen_width() * 0.55, screen_height() - (1 + (HERO_HEIGHT * 3.5)), 2,  HERO_HEIGHT * 3.5, gateImg);
@@ -404,19 +404,6 @@ void enemyMovement(sprite_id opponent) {
       Edx = -0.3;
     }
   }
-  if (level == 5) {
-    for (int i = 0; i <= platformAmount; i++){
-      if (xCollision(opponent, platform[i])){
-        if (yCollision(opponent, platform[i])){
-          sprite_back(opponent);
-          Edy = 0;
-        }
-      }
-      else {
-        Edy = 0.7;
-      }
-    }
-  }
 }
 
 // All user movement and collision checks.
@@ -485,6 +472,7 @@ void moveChar(void){
       }
     }
     if (boxCollision(hero, gate)) {
+      // If key is collected.
       if (keyColl) {
         sprite_hide(gate);
       }
@@ -646,17 +634,85 @@ void timer(void) {
 	}
 }
 
-// Zombie Collision level 5.
-void EnemyColl(sprite_id sprite) {
+// Platform Collision level 5.
+void platformColl(sprite_id sprite) {
     if (sprite_x(sprite) < 1) {
       Pdx = 0.3;
     }
     else if (sprite_x(sprite) + sprite_width(sprite) + 1 >= screen_width()) {
-      Pdx = -0.3; // ### Potentially change this
-
+      Pdx = -0.3;
     }
     sprite_turn_to(platform[2], Pdx, 0);
-    sprite_step(platform[2]); // ### FIX THIS FOR PLATFORM MOVEMENT
+    sprite_step(platform[2]);
+}
+
+bool platform3 = false;
+bool platform2 = false;
+bool platform1 = false;
+bool platform0 = false;
+
+// Enemy collision (Including gravity).
+void enemyColl(sprite_id sprite) {
+  Edy = 1;
+  // Don't hate the hard code, hate the game.
+  // if (boxCollision(sprite, platform[3]) || boxCollision(sprite, platform[2]) || boxCollision(sprite, platform[2])
+  // || boxCollision(sprite, platform[1]) || boxCollision(sprite, platform[0])) {
+  //   Edy = 0;
+  //   sprite_back(sprite);
+  // } else Edy = 1;
+  // Collision checks between platform/s and hero.
+  for (int i = 0; i <= platformAmount; i++){
+    if (xCollision(sprite, platform[i])){
+      if (yCollision(sprite, platform[i])){
+          if (ground == true){
+            Edy = 0;
+          }
+        }
+      // } else Edy = 1;
+    }
+  }
+
+  // if (boxCollision(sprite, platform[3])) {
+  //   if (!platform3) {
+  //     Edy = 0;
+  //     platform3 = true;
+  //     sprite_back(sprite);
+  //   }
+  //
+  // }
+  // else if (boxCollision(sprite, platform[2])) {
+  //   if (!platform2) {
+  //     Edy = 0;
+  //     platform2 = true;
+  //     sprite_back(sprite);
+  //   }
+  //
+  // }
+  // else if (boxCollision(sprite, platform[1])) {
+  //   if (!platform1) {
+  //     Edy = 0;
+  //     platform1 = true;
+  //     sprite_back(sprite);
+  //   }
+  //
+  // }
+  // else if (boxCollision(sprite, platform[0])) {
+  //   if (!platform0) {
+  //     Edy = 0;
+  //     platform0 = true;
+  //     sprite_back(sprite);
+  //   }
+  // }
+  // else Edy = 1;
+
+  if (sprite_x(sprite) < 1 && Edx == -0.3) {
+    Edx = 0.3;
+  }
+  else if (sprite_x(sprite) + sprite_width(sprite) + 1 >= screen_width() && Edx == 0.3) {
+    Edx = -0.3;
+  }
+  sprite_turn_to(sprite, Edx, round(Edy));
+  sprite_step(sprite);
 }
 
 // Play one turn of game.
@@ -678,17 +734,19 @@ void process(void) {
       sprite_draw(gate);
     }
     if (level == 5) {
-      EnemyColl(platform[2]);
+      platformColl(platform[2]);
+      enemyColl(enemy);
     }
     // Enemy movement.
-    enemyMovement(enemy);
-    sprite_turn_to(enemy, Edx, round(Edy));
-    sprite_step(enemy);
+    else {
+      enemyMovement(enemy);
+      sprite_turn_to(enemy, Edx, round(Edy));
+      sprite_step(enemy);
+    }
     // Character movement.
     moveChar();
     sprite_turn_to(hero, dx, round(dy));
     sprite_step(hero);
-
   }
   else {
     endGame();
