@@ -198,12 +198,14 @@ void DrawPlatforms() {
       enemy = sprite_create(screen_width() - 9, (screen_height() - (2 + (HERO_HEIGHT * 7) - 1)), 3, 2, batEnemy1);
       spriteDrawn = true;
     }
-    platformAmount = 3;
-    platform[0] = initPlatforms(0, screen_height() - 1, screen_width());
+    platformAmount = 4;
+    platform[0] = initPlatforms(0, screen_height() - 1, screen_width() * 0.70); // ### 0.70 is end of platform
     platform[1] = initPlatforms(screen_width() * 0.35, screen_height() - (2 + (HERO_HEIGHT * 2)), screen_width());
     platform[2] = initPlatforms(0, screen_height() - (2 + (HERO_HEIGHT * 4)), screen_width() * 0.65);
     platform[3] = initPlatforms(screen_width() * 0.35, screen_height() - (2 + (HERO_HEIGHT * 6)), screen_width());
-    sprite_draw(platform[0]); sprite_draw(platform[1]); sprite_draw(platform[2]); sprite_draw(platform[3]); break;
+    platform[4] = initPlatforms(screen_width() * 0.80, screen_height() - 1, screen_width() * 0.20); // 0.80 is start of platform
+    sprite_draw(platform[0]); sprite_draw(platform[1]); sprite_draw(platform[2]); sprite_draw(platform[3]); sprite_draw(platform[4]);
+    break;
 
   }
 }
