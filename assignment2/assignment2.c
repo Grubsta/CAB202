@@ -1,12 +1,16 @@
-#include "cpu_speed.h"
-#include "sprite.h"
-#include "lcd.h"
-#include <avr/io.h>
-#include "graphics.h"
-#include <util/delay.h>
-#include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
+#include <math.h>
+#include <avr/io.h>
+#include <avr/interrupt.h>
+#include <util/delay.h>
+#include <cpu_speed.h>
+#include <graphics.h>
 #include <sprite.h>
+
+// Configuration
+#define HW 16
+#define HH 8
 
 // TODO : ###
 // 1. Levels
@@ -28,44 +32,46 @@
 // NEED TO KNOWS
 // SCREEN = 84x48
 
-// Configuration
-#define DELAY (10)
-#define HERO_WIDTH (3)
-#define HERO_HEIGHT (3)
-
-// Bitmaps
+// Bitmaps.
 uint8_t heroBitmap[] = {
   0b00000111, 0b11100000,
 	0b00000110, 0b01100000,
 	0b00000111, 0b11100000,
-	0b01111111, 0b11111110,
+	0b00111111, 0b11111100,
   0b01100011, 0b11000110,
 	0b01000011, 0b11000010,
 	0b00001100, 0b00110000,
 	0b00111000, 0b00011100,
 };
 
-// Initialise Sprites
-sprite_id hero;
+// Initialise sprites.
+Sprite hero;
 
-
-// Creates a single Sprite
-void initCharacter(sprite_id character, uint8_t bitmap) {
-  int x = rand() % (LCD_X - 4);
-	int y = rand() % (LCD_Y - 4);
-  sprite_init(&character, x, y, 4, 4, bitmap);
+// Initialise hero.
+void initHero(void) {
+	int x = rand() % (LCD_X - HW);
+	int y = rand() % (LCD_Y - HH);
+	sprite_init(&hero, x, y, HW, HH, heroBitmap);
 }
 
-
+// Setup (ran on start).
 void setup(void) {
-  set_clock_speed(CPU_8MHz);
+	set_clock_speed(CPU_8MHz);
 	lcd_init(LCD_DEFAULT_CONTRAST);
 	clear_screen();
-  initCharacter(hero, heroBitmap);
-  sprite_draw(&hero);
+	initHero();
+	sprite_draw(&hero);
+	show_screen();
 }
 
+// Process (ran every frame).
+void process(void) {
+	clear_screen();
+	sprite_draw(&hero);
+	show_screen();
+}
 
+// Main loop.
 int main(void) {
 	setup();
 
@@ -75,16 +81,10 @@ int main(void) {
 	}
 }
 
-// Main loop.
-// int main(void) {
-//   // Game environment.
-// 	while ( !game_over ) {
-//     // Draw frame.
-//
-// 		if ( update_screen ) {
-// 			show_screen();
-// 		}
-// 		timer_pause(DELAY);
-// 	}
-// 	return 0;
-// }
+
+// // Creates a single Sprite
+// // void initCharacter(sprite_id character, uint8_t bitmap) {
+// //   int x = rand() % (LCD_X - 4);
+// // 	int y = rand() % (LCD_Y - 4);
+// //   sprite_init(&character, x, y, 4, 4, bitmap);
+// // }
