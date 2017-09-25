@@ -7,6 +7,7 @@
 #include <cpu_speed.h>
 #include <graphics.h>
 #include <sprite.h>
+#include <macros.h>
 
 // Configuration
 #define HW 16
@@ -34,7 +35,7 @@
 
 // Bitmaps.
 uint8_t heroBitmap[] = {
-  0b00000111, 0b11100000,
+  0b00000011, 0b11000000,
 	0b00000110, 0b01100000,
 	0b00000111, 0b11100000,
 	0b00111111, 0b11111100,
@@ -43,6 +44,9 @@ uint8_t heroBitmap[] = {
 	0b00001100, 0b00110000,
 	0b00111000, 0b00011100,
 };
+
+// Global variables.
+
 
 // Initialise sprites.
 Sprite hero;
@@ -54,9 +58,63 @@ void initHero(void) {
 	sprite_init(&hero, x, y, HW, HH, heroBitmap);
 }
 
+// double gameControls(double dx, double dy) {
+//   if (BIT_IS_SET(PIND, 1)){ // Up switch.
+//     dy -= 0.5;
+//   }
+//   else if (BIT_IS_SET(PINB, 7)){ // Down switch.
+//     dy += 0.5;
+//   }
+//   else if (BIT_IS_SET(PINB, 1)){ // Left switch.
+//     dx -= 0.5;
+//   }
+//   else if (BIT_IS_SET(PIND, 0)){ // Right switch.
+//     dx += 0.5;
+//   }
+//   else if (BIT_IS_SET(PINB, 0)){ // Centre switch.
+//
+//   }
+//   return dx; return dy;
+// }
+
+void moveHero(void) {
+  double dx = 0; double dy = 0;
+  // int x = round(hero.x); int y = round(hero.y);
+  // if ((x < 0 || x + HW >= LCD_X) && (y < 0 || y + HH >= LCD_Y)) {
+  //   gameControls(dx, dy);
+  // }
+  if (BIT_IS_SET(PIND, 1)){ // Up switch.
+    dy -= 1;
+  }
+  else if (BIT_IS_SET(PINB, 7)){ // Down switch.
+    dy += 1;
+  }
+  else if (BIT_IS_SET(PINB, 1)){ // Left switch.
+    dx -= 1;
+  }
+  else if (BIT_IS_SET(PIND, 0)){ // Right switch.
+    dx += 1;
+  }
+  else if (BIT_IS_SET(PINB, 0)){ // Centre switch.
+
+  }
+  hero.x += dx;
+  hero.y += dy;
+}
+
+void initControls(void) {
+  // D-pad Controlls.
+  CLEAR_BIT(DDRB, 0); // Centre.
+  CLEAR_BIT(DDRB, 1); // Left.
+  CLEAR_BIT(DDRB, 7); // Down.
+  CLEAR_BIT(DDRD, 0); // Right.
+  CLEAR_BIT(DDRD, 1); // Up.
+}
+
 // Setup (ran on start).
 void setup(void) {
 	set_clock_speed(CPU_8MHz);
+  initControls();
 	lcd_init(LCD_DEFAULT_CONTRAST);
 	clear_screen();
 	initHero();
@@ -67,6 +125,7 @@ void setup(void) {
 // Process (ran every frame).
 void process(void) {
 	clear_screen();
+  moveHero();
 	sprite_draw(&hero);
 	show_screen();
 }
@@ -76,11 +135,10 @@ int main(void) {
 	setup();
 
 	for ( ;; ) {
-		// process();
+		process();
 		_delay_ms(10);
 	}
 }
-
 
 // // Creates a single Sprite
 // // void initCharacter(sprite_id character, uint8_t bitmap) {
