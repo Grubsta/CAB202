@@ -1,3 +1,4 @@
+// ANSI Tower for a Teensy utilising a PewPew board.
 #include <stdint.h>
 #include <stdlib.h>
 #include <math.h>
@@ -8,10 +9,20 @@
 #include <graphics.h>
 #include <sprite.h>
 #include <macros.h>
+#include "bitmaps.h"
 
-// Configuration
-#define HW 16
+// Configuration (sprite L & W)
+#define HW 16 // Hero.
 #define HH 8
+#define TH 21 // Tower.
+#define TW 80
+#define DH 11 // Door.
+#define DW 24
+#define EH 5 // Enemy.
+#define EW 8
+#define KH 3 // Key
+#define KW 8
+
 
 // TODO : ###
 // 1. Levels
@@ -33,56 +44,60 @@
 // NEED TO KNOWS
 // SCREEN = 84x48
 
-// Bitmaps.
-uint8_t heroBitmap[] = {
-  0b00000011, 0b11000000,
-	0b00000110, 0b01100000,
-	0b00000111, 0b11100000,
-	0b00111111, 0b11111100,
-  0b01100011, 0b11000110,
-	0b01000011, 0b11000010,
-	0b00001100, 0b00110000,
-	0b00111000, 0b00011100,
-};
-
 // Global variables.
-
+double dx = 0;
+double dy = 0;
+int level = 1;
 
 // Initialise sprites.
-Sprite hero;
+Sprite hero; Sprite tower; Sprite door;
+Sprite key; Sprite enemy; Sprite treasure;
+
+// Parameters asking for rand or static:
+// if static x & y set pos, else rand
 
 // Initialise hero.
 void initHero(void) {
-	int x = rand() % (LCD_X - HW);
-	int y = rand() % (LCD_Y - HH);
+	int x = LCD_X / 2 - HW / 2;
+	int y = LCD_Y / 2 + HH + 3;
 	sprite_init(&hero, x, y, HW, HH, heroBitmap);
 }
 
-// double gameControls(double dx, double dy) {
-//   if (BIT_IS_SET(PIND, 1)){ // Up switch.
-//     dy -= 0.5;
-//   }
-//   else if (BIT_IS_SET(PINB, 7)){ // Down switch.
-//     dy += 0.5;
-//   }
-//   else if (BIT_IS_SET(PINB, 1)){ // Left switch.
-//     dx -= 0.5;
-//   }
-//   else if (BIT_IS_SET(PIND, 0)){ // Right switch.
-//     dx += 0.5;
-//   }
-//   else if (BIT_IS_SET(PINB, 0)){ // Centre switch.
-//
-//   }
-//   return dx; return dy;
-// }
+// Colisions for static map edges.
+void staticMap(void) {
+  int x = round(hero.x); int y = round(hero.y);
+  if (x < 0 || x + HW >= LCD_X - 1) hero.x -= dx;
+  if (y - 2  < 0 || y + HH >= LCD_Y - 1) hero.y -= dy;
 
+}
+
+// Draws level skeleton.
+void drawLvl(void) {
+  int midX = LCD_X / 2;
+  int maxY = LCD_Y - 1;
+  int maxX = LCD_X - 1;
+  if (level == 1) {
+    sprite_init(&enemy, LCD_X * 0.85, LCD_Y * 0.40, EW, EH, enemyBitmap);
+    sprite_init(&key, LCD_X * 0.15 - KW, LCD_Y * 0.40, KW, KH, keyBitmap);
+    sprite_init(&tower, 2, 0, TW, TH, towerBitmap);
+    sprite_init(&door, midX - DW / 2, TH - DH, DW, DH, doorBitmap);
+    draw_line(0, 0, maxX, 0, FG_COLOUR);
+    draw_line(0, 0, 0, maxY, FG_COLOUR);
+    draw_line(0, maxY, maxX, maxY, FG_COLOUR);
+    draw_line(maxX, 0, maxX, maxY, FG_COLOUR);
+    sprite_draw(&tower); sprite_draw(&door); sprite_draw(&enemy);
+    sprite_draw(&key);
+  }
+  else {
+
+  }
+}
+
+// Hero movement.
 void moveHero(void) {
   double dx = 0; double dy = 0;
   // int x = round(hero.x); int y = round(hero.y);
-  // if ((x < 0 || x + HW >= LCD_X) && (y < 0 || y + HH >= LCD_Y)) {
-  //   gameControls(dx, dy);
-  // }
+  // Reads user movement input.
   if (BIT_IS_SET(PIND, 1)){ // Up switch.
     dy -= 1;
   }
@@ -98,10 +113,14 @@ void moveHero(void) {
   else if (BIT_IS_SET(PINB, 0)){ // Centre switch.
 
   }
-  hero.x += dx;
   hero.y += dy;
+  hero.x += dx;
+  if (level == 1) {
+    staticMap();
+  }
 }
 
+// Enables input from PewPew switches.
 void initControls(void) {
   // D-pad Controlls.
   CLEAR_BIT(DDRB, 0); // Centre.
@@ -117,6 +136,7 @@ void setup(void) {
   initControls();
 	lcd_init(LCD_DEFAULT_CONTRAST);
 	clear_screen();
+  drawLvl();
 	initHero();
 	sprite_draw(&hero);
 	show_screen();
@@ -125,6 +145,7 @@ void setup(void) {
 // Process (ran every frame).
 void process(void) {
 	clear_screen();
+  drawLvl();
   moveHero();
 	sprite_draw(&hero);
 	show_screen();
@@ -139,10 +160,3 @@ int main(void) {
 		_delay_ms(10);
 	}
 }
-
-// // Creates a single Sprite
-// // void initCharacter(sprite_id character, uint8_t bitmap) {
-// //   int x = rand() % (LCD_X - 4);
-// // 	int y = rand() % (LCD_Y - 4);
-// //   sprite_init(&character, x, y, 4, 4, bitmap);
-// // }
