@@ -11,7 +11,7 @@
 #include <macros.h>
 #include "bitmaps.h"
 
-// Configuration (sprite L & W)
+// Configuration (sprite L & W).
 #define HW 16 // Hero.
 #define HH 8
 #define TH 21 // Tower.
@@ -20,7 +20,7 @@
 #define DW 24
 #define EH 5 // Enemy.
 #define EW 8
-#define KH 3 // Key
+#define KH 3 // Key.
 #define KW 8
 
 
@@ -63,12 +63,31 @@ void initHero(void) {
 	sprite_init(&hero, x, y, HW, HH, heroBitmap);
 }
 
-// Colisions for static map edges.
+// Colisions for static map edges. ### FIX
 void staticMap(void) {
   int x = round(hero.x); int y = round(hero.y);
   if (x < 0 || x + HW >= LCD_X - 1) hero.x -= dx;
   if (y - 2  < 0 || y + HH >= LCD_Y - 1) hero.y -= dy;
 
+}
+
+// Collision detection between 2 sprites.
+void spriteCollision(sprite_id sprite1, sprite_id sprite2) {
+  // // Sprite 1.
+  // int spr1Bottom = round(sprite1.y + sprite1->height);
+  // int spr1Top = round(sprite1.y);
+  // int spr1Left = round(sprite1.x);
+  // int spr1Right = round(sprite1.x + sprite1->width);
+  // // Sprite 2.
+  // int spr2Bottom = round(sprite2.y + sprite2->height);
+  // int spr2Top = round(sprite2.y);
+  // int spr2Left = round(sprite2.x);
+  // int spr2Right = round(sprite2.x + sprite2->width);
+  // // Creates a perimter arround sprites and checks for collision.
+  // if (spr1Bottom < spr2Top || spr1Top > spr2Bottom || spr1Right < spr2Left|| spr1Left > spr2Right) {
+  //   return false;
+  // }
+  // else return true;
 }
 
 // Draws level skeleton.
@@ -89,7 +108,13 @@ void drawLvl(void) {
     sprite_draw(&key);
   }
   else {
-
+    // while(true) {
+    //   enemy.x = random_range(0, LCD_X - EW);
+    //   enemy.y = random_range(0, LCD_Y - EH);
+    //   if (!collision) {
+    //     break;
+    //   }
+    // }
   }
 }
 
@@ -111,13 +136,23 @@ void moveHero(void) {
     dx += 1;
   }
   else if (BIT_IS_SET(PINB, 0)){ // Centre switch.
-
+    // DISPLAY STATS! hero = lives, score, level
+    // break;
   }
   hero.y += dy;
   hero.x += dx;
   if (level == 1) {
     staticMap();
   }
+}
+
+// Welcome Screen. ### Not FINISHED! NEVER CALLED
+void welcomeScreen(void) {
+  clear_screen();
+  draw_string(LCD_X / 2 - (10 / 2), LCD_Y / 2 - 2, "Corey Hull", FG_COLOUR);
+  draw_string(LCD_X / 2 - (9 / 2), LCD_Y / 2 + 2, "N10007164", FG_COLOUR);
+  show_screen();
+  _delay_ms(2000);
 }
 
 // Enables input from PewPew switches.
@@ -132,31 +167,30 @@ void initControls(void) {
 
 // Setup (ran on start).
 void setup(void) {
-	set_clock_speed(CPU_8MHz);
+  set_clock_speed(CPU_8MHz);
   initControls();
-	lcd_init(LCD_DEFAULT_CONTRAST);
-	clear_screen();
+  lcd_init(LCD_DEFAULT_CONTRAST);
+  clear_screen();
   drawLvl();
-	initHero();
-	sprite_draw(&hero);
-	show_screen();
+  initHero();
+  sprite_draw(&hero);
+  show_screen();
 }
 
 // Process (ran every frame).
 void process(void) {
-	clear_screen();
+  clear_screen();
   drawLvl();
   moveHero();
-	sprite_draw(&hero);
-	show_screen();
+  sprite_draw(&hero);
+  show_screen();
 }
 
 // Main loop.
 int main(void) {
-	setup();
-
-	for ( ;; ) {
-		process();
-		_delay_ms(10);
+  setup();
+  for ( ;; ) {
+    process();
+    _delay_ms(10);
 	}
 }
