@@ -56,6 +56,9 @@ int dxdy[1];
 int level = 1;
 int lives = 3;
 int score = 0;
+int seconds = 0;
+int minutes = 0;
+int timeCounter = 0;
 bool keyColl = false;
 bool activated = false;
 uint16_t closedCon = 0;
@@ -144,7 +147,13 @@ void drawLvl(void) {
 // }
 
 void displayMenu(void) {
-
+	clear_screen();
+	char lev[50]; char liv[50]; char scor[50]; char timer[20]; // ### ADD gametime
+	sprintf(lev, "Level: %d", level); draw_string(0, 0, lev, FG_COLOUR);
+	sprintf(liv, "Lives: %d", lives); draw_string(0, 10, liv, FG_COLOUR);
+	sprintf(scor, "Score: %d", score); draw_string(0, 20, scor, FG_COLOUR);
+	sprintf(timer, "Time: %02d:%02d", minutes, seconds); draw_string(0, 30, timer, FG_COLOUR);
+	show_screen();
 }
 
 void userControlls(void) {
@@ -179,12 +188,7 @@ void userControlls(void) {
 				}
 				activated = false;
 			}
-			clear_screen();
-			char lev[50]; char liv[50]; char scor[50]; // ### ADD
-			sprintf(lev, "Level: %d", level); draw_string(0, 0, lev, FG_COLOUR);
-			sprintf(liv, "Lives: %d", lives); draw_string(0, 10, liv, FG_COLOUR);
-			sprintf(scor, "Score: %d", score); draw_string(0, 20, scor, FG_COLOUR);
-			show_screen();
+			displayMenu();
 		}
 	}
 
@@ -219,7 +223,7 @@ void moveHero(void) {
 
 		}
 		else {
-			 level += 1;
+			level += 1;
 			hero.x = door.x + door.width * 0.5;
 			hero.y = door.y + door.height * 0.5;
 		}
@@ -233,8 +237,6 @@ void moveHero(void) {
     staticMap();
   }
 }
-
-
 
 // Welcome Screen.
 void welcomeScreen(void) {
@@ -256,6 +258,22 @@ void welcomeScreen(void) {
 	// }
 }
 
+// Initialise Timer.
+void timer(void) {
+	timeCounter++;
+		if (timeCounter == 10) {
+		seconds++;
+		timeCounter = 0;
+			if (seconds == 60) {
+			seconds = 0;
+			minutes++;
+				if (minutes == 100) {
+				  // game_over = true;
+			}
+		}
+	}
+}
+
 // Enables input from PewPew switches.
 void initControls(void) {
   // D-pad Controlls.
@@ -274,6 +292,7 @@ void setup(void) {
   set_clock_speed(CPU_8MHz);
   initControls();
   lcd_init(LCD_DEFAULT_CONTRAST);
+	timer();
 	welcomeScreen();
   clear_screen();
   drawLvl();
@@ -286,6 +305,7 @@ void setup(void) {
 void process(void) {
 	if (lives > 0) {
 		clear_screen();
+		timer();
 		drawLvl();
 		moveHero();
 		sprite_draw(&hero);
