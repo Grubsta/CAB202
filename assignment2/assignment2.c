@@ -1,6 +1,7 @@
 // ANSI Tower for a Teensy utilising a PewPew board.
 #include <stdint.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <math.h>
 #include <avr/io.h>
 #include <avr/interrupt.h>
@@ -72,22 +73,24 @@ void staticMap(void) {
 }
 
 // Collision detection between 2 sprites.
-void spriteCollision(sprite_id sprite1, sprite_id sprite2) {
-  // // Sprite 1.
-  // int spr1Bottom = round(sprite1.y + sprite1->height);
-  // int spr1Top = round(sprite1.y);
-  // int spr1Left = round(sprite1.x);
-  // int spr1Right = round(sprite1.x + sprite1->width);
-  // // Sprite 2.
-  // int spr2Bottom = round(sprite2.y + sprite2->height);
-  // int spr2Top = round(sprite2.y);
-  // int spr2Left = round(sprite2.x);
-  // int spr2Right = round(sprite2.x + sprite2->width);
-  // // Creates a perimter arround sprites and checks for collision.
-  // if (spr1Bottom < spr2Top || spr1Top > spr2Bottom || spr1Right < spr2Left|| spr1Left > spr2Right) {
-  //   return false;
-  // }
-  // else return true;
+bool spriteCollision(void) {
+  // Sprite 1.
+  int spr1Bottom = round(hero.x + hero.height - 1);
+  int spr1Top = round(hero.y);
+  int spr1Left = round(hero.x);
+  int spr1Right = round(hero.x + hero.width - 1);
+  // Sprite 2.
+  int spr2Bottom = round(enemy.y + enemy.height - 1);
+  int spr2Top = round(enemy.y);
+  int spr2Left = round(enemy.x);
+  int spr2Right = round(enemy.x + enemy.width - 1);
+  // Creates a perimter arround sprites and checks for collision.
+	if (spr1Bottom < spr2Top || spr1Top > spr2Bottom || spr1Right < spr2Left|| spr1Left > spr2Right) {
+		return false;
+	}
+	else {
+		return true;
+	}
 }
 
 // Draws level skeleton.
@@ -123,7 +126,11 @@ void moveHero(void) {
   double dx = 0; double dy = 0;
   // int x = round(hero.x); int y = round(hero.y);
   // Reads user movement input.
-  if (BIT_IS_SET(PIND, 1)){ // Up switch.
+	if (spriteCollision()) {
+		dx -= 0;
+		dy -= 0;
+	}
+	else if (BIT_IS_SET(PIND, 1)){ // Up switch.
     dy -= 1;
   }
   else if (BIT_IS_SET(PINB, 7)){ // Down switch.
@@ -148,11 +155,21 @@ void moveHero(void) {
 
 // Welcome Screen. ### Not FINISHED! NEVER CALLED
 void welcomeScreen(void) {
-  clear_screen();
-  draw_string(LCD_X / 2 - (10 / 2), LCD_Y / 2 - 2, "Corey Hull", FG_COLOUR);
-  draw_string(LCD_X / 2 - (9 / 2), LCD_Y / 2 + 2, "N10007164", FG_COLOUR);
-  show_screen();
-  _delay_ms(2000);
+  // clear_screen();
+  // draw_string(LCD_X / 2 - (10 / 2), LCD_Y / 2 - 2, "Corey Hull", FG_COLOUR);
+  // draw_string(LCD_X / 2 - (9 / 2), LCD_Y / 2 + 2, "N10007164", FG_COLOUR);
+  // show_screen();
+  // _delay_ms(2000);
+	// char countDwn[2] = {"3", "2", "1"};
+	// bool start = false;
+	// do {
+	// 	if (BIT_IS_SET(PINF, 6) || 	BIT_IS_SET(PINF, 5)) start = true;
+	// } while (!start);
+	// for (int i = 0; i <= 2; i++) {
+	// 	clear_screen();
+	// 	draw_string(LCD_X / 2 - (9 / 2), LCD_Y / 2, countDwn[i], FG_COLOUR);
+	// 	_delay_ms(333); // ### CHANGE to 3Hz frequency
+	// }
 }
 
 // Enables input from PewPew switches.
@@ -163,6 +180,9 @@ void initControls(void) {
   CLEAR_BIT(DDRB, 7); // Down.
   CLEAR_BIT(DDRD, 0); // Right.
   CLEAR_BIT(DDRD, 1); // Up.
+	// Button Controlls.
+	CLEAR_BIT(DDRF, 6); // Left.
+	CLEAR_BIT(DDRF, 5); // Right.
 }
 
 // Setup (ran on start).
