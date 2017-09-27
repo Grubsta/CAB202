@@ -46,17 +46,18 @@
 // SCREEN = 84x48
 
 // Global variables.
+float speed = 1.0;
 double dx = 0;
 double dy = 0;
+int dxdy[1];
 int level = 1;
 int lives = 3;
+bool keyColl = false;
+
 
 // Initialise sprites.
 Sprite hero; Sprite tower; Sprite door;
 Sprite key; Sprite enemy; Sprite treasure;
-
-// Parameters asking for rand or static:
-// if static x & y set pos, else rand
 
 // Initialise hero.
 void initHero(void) {
@@ -65,25 +66,29 @@ void initHero(void) {
 	sprite_init(&hero, x, y, HW, HH, heroBitmap);
 }
 
-// Colisions for static map edges. ### FIX
+// void drawBorder(int length, int width) {
+//
+// }
+
+// Colision detection for static map walls.
 void staticMap(void) {
   int x = round(hero.x); int y = round(hero.y);
-  if (x < 0 || x + HW >= LCD_X - 1) hero.x -= dx;
+  if (x < 1 || x + HW >= LCD_X ) hero.x -= dx;
   if (y - 2  < 0 || y + HH >= LCD_Y - 1) hero.y -= dy;
 }
 
 // Collision detection between 2 sprites.
 bool spriteCollision(Sprite sprite1, Sprite sprite2) {
   // Sprite 1.
-  int spr1Bottom = round(sprite1.x + sprite1.height - 1);
+  int spr1Bottom = round(sprite1.x + sprite1.height);
   int spr1Top = round(sprite1.y);
   int spr1Left = round(sprite1.x);
-  int spr1Right = round(sprite1.x + sprite1.width - 1);
+  int spr1Right = round(sprite1.x + sprite1.width);
   // Sprite 2.
-  int spr2Bottom = round(sprite2.y + sprite2.height - 1);
+  int spr2Bottom = round(sprite2.y + sprite2.height);
   int spr2Top = round(sprite2.y);
   int spr2Left = round(sprite2.x);
-  int spr2Right = round(sprite2.x + sprite2.width - 1);
+  int spr2Right = round(sprite2.x + sprite2.width);
   // Creates a perimter arround sprites and checks for collision.
 	if (spr1Bottom < spr2Top || spr1Top > spr2Bottom || spr1Right < spr2Left|| spr1Left > spr2Right) {
 		return false;
@@ -124,35 +129,37 @@ void drawLvl(void) {
     // }
   }
 }
-struct dxdy {
-	int dx[0];
-	int dy[0];
-}
+
 
 // Destroys entire level.
-void destroyGame(void) {
-	if (level == 1) {
+// void destroyGame(void) {
+// 	if (level == 1) {
+//
+// 	}
+// }
 
-	}
-}
 
-int dxdy[1];
 
 void userControlls(void) {
 	if (BIT_IS_SET(PIND, 1)){ // Up switch.
-		dy = -1;
+		dy = -speed;
 	}
 	else if (BIT_IS_SET(PINB, 7)){ // Down switch.
-		dy = 1;
+		dy = speed;
 	}
 	else if (BIT_IS_SET(PINB, 1)){ // Left switch.
-		dx = -1;
+		dx = -speed;
 	}
 	else if (BIT_IS_SET(PIND, 0)){ // Right switch.
-		dx = 1;
+		dx = speed;
 	}
 	else if (BIT_IS_SET(PINB, 0)){ // Centre switch.
-		// DISPLAY STATS! hero = lives, score, level
+		// while (button_pressed) {
+	// 	clear_screen()
+	// 	displaymenu;
+	// 	show_screen;
+	// }
+		// DISPLAY STATS! hero = lives, score, level, time.
 		// break;
 	}
 	dxdy[0] = dx; dxdy[1] = dy;
@@ -160,38 +167,41 @@ void userControlls(void) {
 
 // Hero movement.
 void moveHero(void) {
-  double dx = 0; double dy = 0;
+  dx = 0; dy = 0;
 	dxdy[0] = 0; dxdy[1] = 0;
   // int x = round(hero.x); int y = round(hero.y);
   // Reads user movement input.
-	if (spriteCollision(hero, enemy)) {
+	userControlls();
+	dx = dxdy[0];
+	dy = dxdy[1];
+	hero.y += dy;
+	hero.x += dx;
+	if (spriteCollision(hero, enemy)) { // ### HIDE sprites
 		lives -= 1;
 		// destroyGame();
+		hero.y -= dy;
+		hero.x -= dx;
 	}
-	else {
-		userControlls();
-		dx = dxdy[0];
-		dy = dxdy[1];
+	else if (spriteCollision(hero, key)) { // ### HIDE sprites
+		keyColl = true;
 	}
-	// else if (BIT_IS_SET(PIND, 1)){ // Up switch.
-  //   dy -= 1;
-  // }
-  // else if (BIT_IS_SET(PINB, 7)){ // Down switch.
-  //   dy += 1;
-  // }
-  // else if (BIT_IS_SET(PINB, 1)){ // Left switch.
-  //   dx -= 1;
-  // }
-  // else if (BIT_IS_SET(PIND, 0)){ // Right switch.
-  //   dx += 1;
-  // }
-  // else if (BIT_IS_SET(PINB, 0)){ // Centre switch.
-  //   // DISPLAY STATS! hero = lives, score, level
-  //   // break;
-  // }
-  hero.y += dy;
-  hero.x += dx;
-	// Collision.
+	else if (spriteCollision(hero, door)) {
+		if (!keyColl) {
+			hero.y -= dy;
+			hero.x -= dx;
+
+		}
+		else {
+			 level += 1;
+			hero.x = door.x + door.width * 0.5;
+			hero.y = door.y + door.height * 0.5;
+		}
+	}
+	// else {
+	// 	hero.y += dy;
+	// 	hero.x += dx;
+	// }
+	// Wall collision.
   if (level == 1) {
     staticMap();
   }
@@ -199,14 +209,14 @@ void moveHero(void) {
 
 
 
-// Welcome Screen. ### Not FINISHED! NEVER CALLED
+// Welcome Screen.
 void welcomeScreen(void) {
   // clear_screen();
-  // draw_string(LCD_X / 2 - (10 / 2), LCD_Y / 2 - 2, "Corey Hull", FG_COLOUR);
-  // draw_string(LCD_X / 2 - (9 / 2), LCD_Y / 2 + 2, "N10007164", FG_COLOUR);
+  // draw_string(LCD_X / 2 - 25, LCD_Y / 2 - 6, "Corey Hull", FG_COLOUR);
+  // draw_string(LCD_X / 2 - 23, LCD_Y / 2 + 6, "N10007164", FG_COLOUR);
   // show_screen();
   // _delay_ms(2000);
-	// char countDwn[2] = {"3", "2", "1"};
+	// char* countDwn[3] = {"3", "2", "1"};
 	// bool start = false;
 	// do {
 	// 	if (BIT_IS_SET(PINF, 6) || 	BIT_IS_SET(PINF, 5)) start = true;
@@ -214,7 +224,7 @@ void welcomeScreen(void) {
 	// for (int i = 0; i <= 2; i++) {
 	// 	clear_screen();
 	// 	draw_string(LCD_X / 2 - (9 / 2), LCD_Y / 2, countDwn[i], FG_COLOUR);
-	//	show_screen();
+	// 	show_screen();
 	// 	_delay_ms(333); // ### CHANGE to 3Hz frequency
 	// }
 }
@@ -227,7 +237,7 @@ void initControls(void) {
   CLEAR_BIT(DDRB, 7); // Down.
   CLEAR_BIT(DDRD, 0); // Right.
   CLEAR_BIT(DDRD, 1); // Up.
-	// Button Controlls.
+	// SW2 & SW3 Controlls.
 	CLEAR_BIT(DDRF, 6); // Left.
 	CLEAR_BIT(DDRF, 5); // Right.
 }
@@ -237,7 +247,7 @@ void setup(void) {
   set_clock_speed(CPU_8MHz);
   initControls();
   lcd_init(LCD_DEFAULT_CONTRAST);
-	// welcomeScreen();
+	welcomeScreen();
   clear_screen();
   drawLvl();
   initHero();
