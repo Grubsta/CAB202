@@ -1,7 +1,6 @@
-// Bitmap variables.
 #include <graphics.h>
 #include <sprite.h>
-
+// Bitmaps.
 uint8_t heroBitmap[] = {
   0b00000011, 0b11000000,
 	0b00000110, 0b01100000,
@@ -12,6 +11,7 @@ uint8_t heroBitmap[] = {
 	0b00001100, 0b00110000,
 	0b00011000, 0b00011000,
 };
+
 uint8_t enemyBitmap[] = {
   0b01111110,
   0b11011011,
