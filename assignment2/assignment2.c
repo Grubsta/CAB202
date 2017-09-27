@@ -1,5 +1,6 @@
 // ANSI Tower for a Teensy utilising a PewPew board.
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <math.h>
@@ -23,6 +24,8 @@
 #define EW 8
 #define KH 3 // Key.
 #define KW 8
+
+#define thresh (1000)
 
 
 // TODO : ###
@@ -52,8 +55,11 @@ double dy = 0;
 int dxdy[1];
 int level = 1;
 int lives = 3;
+int score = 0;
 bool keyColl = false;
-
+bool activated = false;
+uint16_t closedCon = 0;
+uint16_t openCon = 0;
 
 // Initialise sprites.
 Sprite hero; Sprite tower; Sprite door;
@@ -119,7 +125,6 @@ void drawLvl(void) {
   }
 	// Random level sprites.
   else {
-
     // while(true) {
     //   enemy.x = random_range(0, LCD_X - EW);
     //   enemy.y = random_range(0, LCD_Y - EH);
@@ -138,7 +143,9 @@ void drawLvl(void) {
 // 	}
 // }
 
+void displayMenu(void) {
 
+}
 
 void userControlls(void) {
 	if (BIT_IS_SET(PIND, 1)){ // Up switch.
@@ -154,16 +161,36 @@ void userControlls(void) {
 		dx = speed;
 	}
 	else if (BIT_IS_SET(PINB, 0)){ // Centre switch.
-		// while (button_pressed) {
-	// 	clear_screen()
-	// 	displaymenu;
-	// 	show_screen;
-	// }
-		// DISPLAY STATS! hero = lives, score, level, time.
-		// break;
+		// Runs if input is longer than threshold.
+		closedCon++;
+		openCon = 0;
+		if (closedCon > thresh) {
+			if (!activated) {
+				closedCon = 0;
+			}
+			activated = true;
+		}
+		else {
+			openCon++;
+			closedCon = 0;
+			if (openCon > thresh) {
+				if (activated) {
+					openCon = 0;
+				}
+				activated = false;
+			}
+			clear_screen();
+			char lev[50]; char liv[50]; char scor[50]; // ### ADD
+			sprintf(lev, "Level: %d", level); draw_string(0, 0, lev, FG_COLOUR);
+			sprintf(liv, "Lives: %d", lives); draw_string(0, 10, liv, FG_COLOUR);
+			sprintf(scor, "Score: %d", score); draw_string(0, 20, scor, FG_COLOUR);
+			show_screen();
+		}
 	}
+
 	dxdy[0] = dx; dxdy[1] = dy;
 }
+
 
 // Hero movement.
 void moveHero(void) {
