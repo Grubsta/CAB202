@@ -91,7 +91,7 @@ void initHero(void) {
 }
 
 // Moves enemy sprite towards hero's location.
-void enemyMovement() {
+void enemyMovement() { // ### Fix to allow enemy array.
 	float enemySpeed = 0.1;
 	if (enemy.x < hero.x) enemy.x += enemySpeed;
 	else if (enemy.x > hero.x) enemy.x -= enemySpeed;
@@ -230,8 +230,8 @@ void destroyGame(void) {
 void loadingScreen(void) {
 	clear_screen();
 	char lev[50];char scor[50];
-	sprintf(lev, "You have made it to level %d", level); draw_string(0, 20, lev, FG_COLOUR);
-	sprintf(scor, "With a current score of %d points", score); draw_string(0, 40, scor, FG_COLOUR);
+	sprintf(lev, "You have made level %d", level); draw_string(0, 20, lev, FG_COLOUR);
+	sprintf(scor, "Your current score is %d", score); draw_string(0, 40, scor, FG_COLOUR);
 	show_screen();
 	_delay_ms(2000);
 }
@@ -352,6 +352,16 @@ void welcomeScreen(void) {
 	}
 }
 
+void gameOverScreen(void) {
+	clear_screen();
+	char lev[50];char scor[50];
+	draw_string(0, 0, "You died in ANZI!", FG_COLOUR);
+	sprintf(lev, "level: %d", level); draw_string(0, 10, lev, FG_COLOUR);
+	sprintf(scor, "final score: %d", score); draw_string(0, 20, scor, FG_COLOUR);
+	draw_string(0, 40, "SW2/3 to restart", FG_COLOUR);
+	show_screen();
+}
+
 // Initialise Timer.
 void timer(void) {
 	timeCounter++;
@@ -406,7 +416,7 @@ void process(void) {
 		show_screen();
 	}
 	else {
-		// Endgame screen.
+		gameOverScreen();
 	}
 }
 
