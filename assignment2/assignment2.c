@@ -24,6 +24,10 @@
 #define EW 8
 #define KH 3 // Key.
 #define KW 8
+#define VWH 44 // Vetical wall.
+#define VWW 3
+#define HWH 3 // horizontal wall.
+#define HWW 44
 
 #define thresh (1000)
 
@@ -59,6 +63,9 @@ int score = 0;
 int seconds = 0;
 int minutes = 0;
 int timeCounter = 0;
+int enemyAm = 1;
+int treasureAm = 0;
+int wallAm = 0;
 bool keyColl = false;
 bool activated = false;
 uint16_t closedCon = 0;
@@ -67,6 +74,7 @@ uint16_t openCon = 0;
 // Initialise sprites.
 Sprite hero; Sprite tower; Sprite door;
 Sprite key; Sprite enemy; Sprite treasure;
+Sprite wall[5];
 
 // Initialise hero.
 void initHero(void) {
@@ -107,15 +115,47 @@ bool spriteCollision(Sprite sprite1, Sprite sprite2) {
 	}
 }
 
-// Draws level skeleton.
+void randWallLocation(void) {
+
+}
+
+// Draws all sprites which objects are stored in an array.
+void drawAll(Sprite sprite[], int amount) {
+// 	for (int i = 0; i < amount + 1; i++) {
+// 		sprite_draw(&sprite[i]);
+// 	}
+// }
+//
+// // Draws each sprite in level.
+// void drawLvl(void) {
+// 	if (level == 1) sprite_draw(&tower);
+// 	else {
+//
+// 	}
+// 	// sprite_draw(&enemy)
+// 	if (enemyAm > 0) {
+// 		for(int i = 0; i < amount + 1; i++) {
+//
+// 		}
+// 	}
+// 	sprite_draw(&door); sprite_draw(&key);
+// 	drawAll(&enemy, enemyAm);
+// 	drawAll(&treasure, treasureAm);
+// 	drawAll(&wall, wallAm);
+
+}
+
+// Initialises level skeleton and draws it.
 void drawLvl(void) {
+	// int screenSizeX = 84; // ### Change for scrolling map feature.
+	// int screenSizeY = 48;
 	// Useful vairables.
   int midX = LCD_X / 2;
   int maxY = LCD_Y - 1;
   int maxX = LCD_X - 1;
 	// Static level 1 sprites.
   if (level == 1) {
-    sprite_init(&enemy, LCD_X * 0.85, LCD_Y * 0.40, EW, EH, enemyBitmap);
+    sprite_init(&enemy, LCD_X * 0.85, LCD_Y * 0.40, EW, EH, enemyBitmap); // ### relocate enemy to allow for movement
     sprite_init(&key, LCD_X * 0.15 - KW, LCD_Y * 0.40, KW, KH, keyBitmap);
     sprite_init(&tower, 2, 0, TW, TH, towerBitmap);
     sprite_init(&door, midX - DW / 2, TH - DH, DW, DH, doorBitmap);
@@ -126,29 +166,61 @@ void drawLvl(void) {
     sprite_draw(&tower); sprite_draw(&door); sprite_draw(&enemy);
     sprite_draw(&key);
   }
-	// Random level sprites.
-  else {
-    // while(true) {
-    //   enemy.x = random_range(0, LCD_X - EW);
-    //   enemy.y = random_range(0, LCD_Y - EH);
-    //   if (!collision) {
-    //     break;
-    //   }
-    // }
-  }
+	// 
+	// // Random level sprites.
+  // else { // ### ADD 6 walls when scolling map feature complete
+	// 	bool valid = false;
+	// 	for (int i = 0; i <= wallAm; i++) {
+	// 		do {
+	// 			int x = rand() % (50 + 1 - 6) + 6;
+	// 			int y = rand() % (50 + 1 - 6) + 6;
+	// 			int direction = rand() % (1 + 1);
+	// 			if (direction == 1) { // Vertical direction.
+	// 				sprite_init(&wall[i], x, y, VWH, VWW, vertWallBitmap);
+	// 			} else { // horizontal direction.
+	// 				sprite_init(&wall[i], x, y, HWH, HWW, horWallBitmap);
+	// 			}
+	// 			for (int a = 0; a <= 5; a++) {
+	// 				if (!spriteCollision(wall[i], wall[a])) valid = true; // ### NEED to compensate for wall gaps.
+	// 				else valid = false;
+	// 			}
+	// 		} while (!valid);
+	// 	}
+  // }
 }
 
+// Moves enemy sprite towards hero's location.
+void enemyMovement (Sprite sprite) {
+	float enemySpeed = 0.1;
+	if (sprite.x < hero.x) sprite.x += enemySpeed;
+	else if (sprite.x > hero.x) sprite.x -= enemySpeed;
+	if (sprite.y < hero.y) sprite.y += enemySpeed;
+	else if (sprite.y > hero.y) sprite.y -= enemySpeed;
+	sprite_draw(&sprite);
+}
 
 // Destroys entire level.
-// void destroyGame(void) {
-// 	if (level == 1) {
-//
-// 	}
-// }
+void destroyGame(void) {
+	if (level == 1) {
+		free(&tower);
+	}
+	free(&hero);
+}
 
+// Loading screen between levels.
+void loadingScreen(void) {
+	// clear_screen();
+	char lev[50];char scor[50];
+	sprintf(lev, "You have made it to level %d", level); draw_string(0, 20, lev, FG_COLOUR);
+	sprintf(scor, "With a current score of %d points", score); draw_string(0, 40, scor, FG_COLOUR);
+	show_screen();
+	_delay_ms(2000);
+}
+
+// Display Menu during gameplay.
 void displayMenu(void) {
 	clear_screen();
-	char lev[50]; char liv[50]; char scor[50]; char timer[20]; // ### ADD gametime
+	char lev[50]; char liv[50]; char scor[50]; char timer[20];
 	sprintf(lev, "Level: %d", level); draw_string(0, 0, lev, FG_COLOUR);
 	sprintf(liv, "Lives: %d", lives); draw_string(0, 10, liv, FG_COLOUR);
 	sprintf(scor, "Score: %d", score); draw_string(0, 20, scor, FG_COLOUR);
@@ -198,45 +270,48 @@ void userControlls(void) {
 
 // Hero movement.
 void moveHero(void) {
-  dx = 0; dy = 0;
+	float xx = dx; float yy = dy;
+	dx = 0; dy = 0;
 	dxdy[0] = 0; dxdy[1] = 0;
   // int x = round(hero.x); int y = round(hero.y);
   // Reads user movement input.
 	userControlls();
 	dx = dxdy[0];
 	dy = dxdy[1];
-	hero.y += dy;
-	hero.x += dx;
 	if (spriteCollision(hero, enemy)) { // ### HIDE sprites
 		lives -= 1;
 		// destroyGame();
-		hero.y -= dy;
-		hero.x -= dx;
+		hero.y -= yy;
+		hero.x -= xx;
 	}
 	else if (spriteCollision(hero, key)) { // ### HIDE sprites
 		keyColl = true;
 	}
 	else if (spriteCollision(hero, door)) {
 		if (!keyColl) {
-			hero.y -= dy;
-			hero.x -= dx;
-
+			hero.y -= yy;
+			hero.x -= xx;
 		}
 		else {
 			level += 1;
-			hero.x = door.x + door.width * 0.5;
-			hero.y = door.y + door.height * 0.5;
+			score += 100;
+			loadingScreen();
 		}
 	}
-	// else {
-	// 	hero.y += dy;
-	// 	hero.x += dx;
-	// }
+	else if (spriteCollision(hero, tower)) {
+		hero.y -= yy;
+		hero.x -= xx;
+	}
+	else {
+		hero.y += dy;
+		hero.x += dx;
+	}
 	// Wall collision.
   if (level == 1) {
     staticMap();
   }
 }
+
 
 // Welcome Screen.
 void welcomeScreen(void) {
@@ -261,14 +336,14 @@ void welcomeScreen(void) {
 // Initialise Timer.
 void timer(void) {
 	timeCounter++;
-		if (timeCounter == 10) {
-		seconds++;
-		timeCounter = 0;
-			if (seconds == 60) {
-			seconds = 0;
-			minutes++;
-				if (minutes == 100) {
-				  // game_over = true;
+	if (timeCounter == 10) {
+	seconds++;
+	timeCounter = 0;
+		if (seconds == 60) {
+		seconds = 0;
+		minutes++;
+			if (minutes == 100) {
+			  // game_over = true;
 			}
 		}
 	}
