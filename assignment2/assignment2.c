@@ -25,9 +25,9 @@
 #define KH 3 // Key.
 #define KW 8
 #define VWH 44 // Vetical wall.
-#define VWW 3
+#define VWW 8 // ### WAS 3
 #define HWH 3 // horizontal wall.
-#define HWW 44
+#define HWW 48 // ### WAS 44
 
 #define thresh (1000)
 
@@ -57,7 +57,7 @@ float speed = 1.0;
 double dx = 0;
 double dy = 0;
 int dxdy[1];
-int level = 1;
+int level = 2;
 int lives = 3;
 int score = 0;
 int seconds = 0;
@@ -65,9 +65,10 @@ int minutes = 0;
 int timeCounter = 0;
 int enemyAm = 1;
 int treasureAm = 0;
-int wallAm = 0;
+int wallAm = 5;
 bool keyColl = false;
 bool activated = false;
+bool wallInitialised = false;
 uint16_t closedCon = 0;
 uint16_t openCon = 0;
 
@@ -145,6 +146,29 @@ void drawAll(Sprite sprite[], int amount) {
 
 }
 
+// Initialises set amount of walls.
+void wallInit(void) {
+	bool valid = false;
+	for (int i = 0; i <= wallAm; i++) {
+		do {
+			int x = rand() % LCD_X;
+			int y = rand() % LCD_Y;
+			int direction = rand() % (1 + 1);
+			if (direction == 1) { // Vertical direction.
+				sprite_init(&wall[i], x, y, VWW, VWH, vertWallBitmap);
+			} else { // horizontal direction.
+				sprite_init(&wall[i], x, y, HWW, HWH, horWallBitmap);
+			}
+			for (int a = 0; a <= 5; a++) {
+				if (!spriteCollision(wall[i], wall[a])) valid = true; // ### NEED to compensate for wall gaps.
+				else valid = false;
+			}
+		} while (!valid);
+		sprite_draw(&wall[i]);
+	}
+	wallInitialised = true;
+}
+
 // Initialises level skeleton and draws it.
 void drawLvl(void) {
 	// int screenSizeX = 84; // ### Change for scrolling map feature.
@@ -166,27 +190,14 @@ void drawLvl(void) {
     sprite_draw(&tower); sprite_draw(&door); sprite_draw(&enemy);
     sprite_draw(&key);
   }
-	// 
-	// // Random level sprites.
-  // else { // ### ADD 6 walls when scolling map feature complete
-	// 	bool valid = false;
-	// 	for (int i = 0; i <= wallAm; i++) {
-	// 		do {
-	// 			int x = rand() % (50 + 1 - 6) + 6;
-	// 			int y = rand() % (50 + 1 - 6) + 6;
-	// 			int direction = rand() % (1 + 1);
-	// 			if (direction == 1) { // Vertical direction.
-	// 				sprite_init(&wall[i], x, y, VWH, VWW, vertWallBitmap);
-	// 			} else { // horizontal direction.
-	// 				sprite_init(&wall[i], x, y, HWH, HWW, horWallBitmap);
-	// 			}
-	// 			for (int a = 0; a <= 5; a++) {
-	// 				if (!spriteCollision(wall[i], wall[a])) valid = true; // ### NEED to compensate for wall gaps.
-	// 				else valid = false;
-	// 			}
-	// 		} while (!valid);
-	// 	}
-  // }
+	// Random level sprites.
+  else { // ### ADD 6 walls when scolling map feature complete
+		if (!wallInitialised) wallInit();
+		for (int i = 0; i < wallAm; i++) {
+			sprite_draw(&wall[i]);
+		}
+
+  }
 }
 
 // Moves enemy sprite towards hero's location.
@@ -209,7 +220,7 @@ void destroyGame(void) {
 
 // Loading screen between levels.
 void loadingScreen(void) {
-	// clear_screen();
+	clear_screen();
 	char lev[50];char scor[50];
 	sprintf(lev, "You have made it to level %d", level); draw_string(0, 20, lev, FG_COLOUR);
 	sprintf(scor, "With a current score of %d points", score); draw_string(0, 40, scor, FG_COLOUR);
@@ -228,6 +239,7 @@ void displayMenu(void) {
 	show_screen();
 }
 
+// User input from PewPew switches.
 void userControlls(void) {
 	if (BIT_IS_SET(PIND, 1)){ // Up switch.
 		dy = -speed;
@@ -242,7 +254,7 @@ void userControlls(void) {
 		dx = speed;
 	}
 	else if (BIT_IS_SET(PINB, 0)){ // Centre switch.
-		// Runs if input is longer than threshold.
+		// Acts as a debouncer whilst user hold switch down.
 		closedCon++;
 		openCon = 0;
 		if (closedCon > thresh) {
@@ -263,7 +275,6 @@ void userControlls(void) {
 			displayMenu();
 		}
 	}
-
 	dxdy[0] = dx; dxdy[1] = dy;
 }
 
@@ -315,22 +326,22 @@ void moveHero(void) {
 
 // Welcome Screen.
 void welcomeScreen(void) {
-  // clear_screen();
-  // draw_string(LCD_X / 2 - 25, LCD_Y / 2 - 6, "Corey Hull", FG_COLOUR);
-  // draw_string(LCD_X / 2 - 23, LCD_Y / 2 + 6, "N10007164", FG_COLOUR);
-  // show_screen();
-  // _delay_ms(2000);
-	// char* countDwn[3] = {"3", "2", "1"};
-	// bool start = false;
-	// do {
-	// 	if (BIT_IS_SET(PINF, 6) || 	BIT_IS_SET(PINF, 5)) start = true;
-	// } while (!start);
-	// for (int i = 0; i <= 2; i++) {
-	// 	clear_screen();
-	// 	draw_string(LCD_X / 2 - (9 / 2), LCD_Y / 2, countDwn[i], FG_COLOUR);
-	// 	show_screen();
-	// 	_delay_ms(333); // ### CHANGE to 3Hz frequency
-	// }
+  clear_screen();
+  draw_string(LCD_X / 2 - 25, LCD_Y / 2 - 6, "Corey Hull", FG_COLOUR);
+  draw_string(LCD_X / 2 - 23, LCD_Y / 2 + 6, "N10007164", FG_COLOUR);
+  show_screen();
+  _delay_ms(2000);
+	char* countDwn[3] = {"3", "2", "1"};
+	bool start = false;
+	do {
+		if (BIT_IS_SET(PINF, 6) || 	BIT_IS_SET(PINF, 5)) start = true;
+	} while (!start);
+	for (int i = 0; i <= 2; i++) {
+		clear_screen();
+		draw_string(LCD_X / 2 - (9 / 2), LCD_Y / 2, countDwn[i], FG_COLOUR);
+		show_screen();
+		_delay_ms(333); // ### CHANGE to 3Hz frequency
+	}
 }
 
 // Initialise Timer.
@@ -368,7 +379,7 @@ void setup(void) {
   initControls();
   lcd_init(LCD_DEFAULT_CONTRAST);
 	timer();
-	welcomeScreen();
+	// welcomeScreen();
   clear_screen();
   drawLvl();
   initHero();
