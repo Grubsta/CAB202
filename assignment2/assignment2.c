@@ -53,28 +53,34 @@
 // SCREEN = 84x48
 
 // Global variables.
+// Location / movement.
 float speed = 1.0;
 double dx = 0;
 double dy = 0;
 int dxdy[1];
-int level = 2;
+// Player.
+int level = 1;
 int lives = 3;
 int score = 0;
+// Timer.
 int seconds = 0;
 int minutes = 0;
 int timeCounter = 0;
+// Sprite amounts.
 int enemyAm = 1;
 int treasureAm = 0;
 int wallAm = 5;
+// Gameplay / Collisions.
 bool keyColl = false;
 bool activated = false;
+bool lvlInit = false;
 bool wallInitialised = false;
 uint16_t closedCon = 0;
 uint16_t openCon = 0;
 
 // Initialise sprites.
 Sprite hero; Sprite tower; Sprite door;
-Sprite key; Sprite enemy; Sprite treasure;
+Sprite key; Sprite enemy; Sprite treasure; // ###  make enemy an array
 Sprite wall[5];
 
 // Initialise hero.
@@ -82,6 +88,16 @@ void initHero(void) {
 	int x = LCD_X / 2 - HW / 2;
 	int y = LCD_Y / 2 + HH + 3;
 	sprite_init(&hero, x, y, HW, HH, heroBitmap);
+}
+
+// Moves enemy sprite towards hero's location.
+void enemyMovement() {
+	float enemySpeed = 0.1;
+	if (enemy.x < hero.x) enemy.x += enemySpeed;
+	else if (enemy.x > hero.x) enemy.x -= enemySpeed;
+	if (enemy.y < hero.y) enemy.y += enemySpeed;
+	else if (enemy.y > hero.y) enemy.y -= enemySpeed;
+	sprite_draw(&enemy);
 }
 
 // void drawBorder(int length, int width) {
@@ -116,34 +132,39 @@ bool spriteCollision(Sprite sprite1, Sprite sprite2) {
 	}
 }
 
-void randWallLocation(void) {
-
-}
-
 // Draws all sprites which objects are stored in an array.
 void drawAll(Sprite sprite[], int amount) {
-// 	for (int i = 0; i < amount + 1; i++) {
-// 		sprite_draw(&sprite[i]);
-// 	}
-// }
-//
-// // Draws each sprite in level.
-// void drawLvl(void) {
-// 	if (level == 1) sprite_draw(&tower);
-// 	else {
-//
-// 	}
-// 	// sprite_draw(&enemy)
-// 	if (enemyAm > 0) {
-// 		for(int i = 0; i < amount + 1; i++) {
-//
-// 		}
-// 	}
-// 	sprite_draw(&door); sprite_draw(&key);
-// 	drawAll(&enemy, enemyAm);
-// 	drawAll(&treasure, treasureAm);
-// 	drawAll(&wall, wallAm);
+	// for (int i = 0; i < amount + 1; i++) {
+	// 	sprite_draw(&sprite[i]);
+	// }
+}
 
+// Draws each sprite in level.
+// void drawEverything(void) {
+// 	// if (level == 1) sprite_draw(&tower);
+// 	// else {
+// 	//
+// 	// }
+// 	// // sprite_draw(&enemy)
+// 	// if (enemyAm > 0) {
+// 	// 	for(int i = 0; i < amount + 1; i++) {
+// 	//
+// 	// 	}
+// 	// }
+// 	// sprite_draw(&door); sprite_draw(&key);
+// 	// drawAll(&enemy, enemyAm);
+// 	// drawAll(&treasure, treasureAm);
+// 	// drawAll(&wall, wallAm);
+// }
+
+void levelInit(void) {
+	// Useful vairables.
+	int midX = LCD_X / 2;
+	sprite_init(&enemy, LCD_X * 0.85, LCD_Y * 0.50, EW, EH, enemyBitmap); // ### relocate enemy to allow for movement
+	sprite_init(&key, LCD_X * 0.15 - KW, LCD_Y * 0.50, KW, KH, keyBitmap);
+	sprite_init(&tower, 2, 0, TW, TH, towerBitmap);
+	sprite_init(&door, midX - DW / 2, TH - DH, DW, DH, doorBitmap);
+	lvlInit = true;
 }
 
 // Initialises set amount of walls.
@@ -173,22 +194,19 @@ void wallInit(void) {
 void drawLvl(void) {
 	// int screenSizeX = 84; // ### Change for scrolling map feature.
 	// int screenSizeY = 48;
-	// Useful vairables.
-  int midX = LCD_X / 2;
-  int maxY = LCD_Y - 1;
-  int maxX = LCD_X - 1;
+	// Useful variables.
+	int maxY = LCD_Y - 1;
+	int maxX = LCD_X - 1;
 	// Static level 1 sprites.
   if (level == 1) {
-    sprite_init(&enemy, LCD_X * 0.85, LCD_Y * 0.40, EW, EH, enemyBitmap); // ### relocate enemy to allow for movement
-    sprite_init(&key, LCD_X * 0.15 - KW, LCD_Y * 0.40, KW, KH, keyBitmap);
-    sprite_init(&tower, 2, 0, TW, TH, towerBitmap);
-    sprite_init(&door, midX - DW / 2, TH - DH, DW, DH, doorBitmap);
+		if (!lvlInit) levelInit();
     draw_line(0, 0, maxX, 0, FG_COLOUR);
     draw_line(0, 0, 0, maxY, FG_COLOUR);
     draw_line(0, maxY, maxX, maxY, FG_COLOUR);
     draw_line(maxX, 0, maxX, maxY, FG_COLOUR);
-    sprite_draw(&tower); sprite_draw(&door); sprite_draw(&enemy);
+    sprite_draw(&tower); sprite_draw(&door);
     sprite_draw(&key);
+		enemyMovement();
   }
 	// Random level sprites.
   else { // ### ADD 6 walls when scolling map feature complete
@@ -198,16 +216,6 @@ void drawLvl(void) {
 		}
 
   }
-}
-
-// Moves enemy sprite towards hero's location.
-void enemyMovement (Sprite sprite) {
-	float enemySpeed = 0.1;
-	if (sprite.x < hero.x) sprite.x += enemySpeed;
-	else if (sprite.x > hero.x) sprite.x -= enemySpeed;
-	if (sprite.y < hero.y) sprite.y += enemySpeed;
-	else if (sprite.y > hero.y) sprite.y -= enemySpeed;
-	sprite_draw(&sprite);
 }
 
 // Destroys entire level.
