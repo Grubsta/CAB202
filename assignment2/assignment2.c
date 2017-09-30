@@ -79,6 +79,9 @@ bool enemyInitialised = false;
 uint16_t closedCon = 0;
 uint16_t openCon = 0;
 
+int wallX1 = -33, wallX2 = 117;
+int wallY1 = -21, wallY2 = 69;
+
 
 // Initialise sprites.
 Sprite hero; Sprite tower; Sprite door; Sprite key;
@@ -101,13 +104,28 @@ void enemyMovement() { // ### Fix to allow enemy array.
 		else if (enemy[i].y > hero.y) enemy[i].y -= enemySpeed;
 		sprite_draw(&enemy[i]);
 	}
-
 }
 
 
-// void drawBorder(int length, int width) {
-//
-// }
+// Draws layered border around map. ### soooo broken.
+void drawBorder(int dx, int dy) {
+	wallX1 += dx; wallX2 += dx;
+	wallY1 += dy; wallY2 += dy;
+	// int y2 = 69 + dy;
+	for (int i = 0; i <= 4; i++) {
+		draw_line(wallX1 - i, wallY1 - i, wallX2 + i, wallY1 - i, FG_COLOUR);
+	}
+	for (int i = 0; i <= 4; i++) {
+		draw_line(wallX1 - i, wallY1 - i, wallX1 - i, wallY2 + i, FG_COLOUR);
+	}
+	for (int i = 0; i <= 4; i++) {
+		draw_line(wallX1 - i, wallY2 - i, wallX2 + i, wallY2 - i, FG_COLOUR);
+	}
+	for (int i = 0; i <= 4; i++) {
+		draw_line(wallX2 - i, wallY1 - i, wallX2 - i, wallY2 + i, FG_COLOUR);
+	}
+
+}
 
 // Colision detection for static map walls.
 void staticMap(void) {
@@ -195,11 +213,12 @@ void moveAll(int x, int y) {
 void scrollMap(void) {
 	int x = 0;
 	int y = 0;
-	if (hero.x < round(LCD_X * 0.15) && hero.x > -33 && hero.x < 117) x += 1;
-	else if (hero.x + HW > round(LCD_X * 0.85) && hero.x > -33 && hero.x < 117) x -= 1;
-	if (hero.y < round(LCD_Y * 0.15) && hero.y > -21 && hero.y < 69) y += 1;
-	else if (hero.y + HH > round(LCD_Y * 0.85) && hero.y > -21 && hero.y < 69) y -= 1;
+	if (hero.x < round(LCD_X * 0.15) && hero.x > wallX1 && hero.x < wallX2) x += 1;
+	else if (hero.x + HW > round(LCD_X * 0.85) && hero.x > -33 && hero.x < wallX2) x -= 1;
+	if (hero.y < round(LCD_Y * 0.15) && hero.y > wallY1 && hero.y < wallY2) y += 1;
+	else if (hero.y + HH > round(LCD_Y * 0.85) && hero.y > wallY1 && hero.y < wallY2) y -= 1;
 	moveAll(x, y);
+	drawBorder(x, y);
 }
 
 
