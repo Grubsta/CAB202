@@ -104,24 +104,6 @@ void enemyMovement() { // ### Fix to allow enemy array.
 
 }
 
-int randint(int n) {
-  if ((n - 1) == RAND_MAX) {
-    return rand();
-  } else {
-    // Chop off all of the values that would cause skew...
-    long end = RAND_MAX / n; // truncate skew
-    assert (end > 0L);
-    end *= n;
-
-    // ... and ignore results from rand() that fall above that limit.
-    // (Worst case the loop condition should succeed 50% of the time,
-    // so we can expect to bail out of this loop pretty quickly.)
-    int r;
-    while ((r = rand()) >= end);
-
-    return r % n;
-  }
-}
 
 // void drawBorder(int length, int width) {
 //
@@ -176,13 +158,6 @@ bool gapCollision(Sprite sprite1, Sprite sprite2, int gap) {
 	}
 }
 
-// Draws all sprites which objects are stored in an array.
-void drawAll(Sprite sprite[], int amount) {
-	// for (int i = 0; i < amount + 1; i++) {
-	// 	sprite_draw(&sprite[i]);
-	// }
-}
-
 // Initialises all sprites on first level.
 void level1Init(void) {
 	// Useful vairables.
@@ -195,6 +170,39 @@ void level1Init(void) {
 	lvlInit = true;
 }
 
+// Moves all sprites dependent on xy values.
+void moveAll(int x, int y) {
+	if (level == 1) {
+		tower.x += x; tower.y += y;
+	}
+	else {
+		for(int i = 0; i < wallAm; i++) {
+			wall[i].x += x; wall[i].y += y;
+		}
+	}
+	for(int i = 0; i < treasureAm; i++) {
+		treasure[i].x += x; treasure[i].y += y;
+	}
+	for(int i = 0; i < enemyAm; i++) {
+		enemy[i].x += x; enemy[i].y += y;
+	}
+	key.x += x; key.y += y;
+	door.x += x; door.y += y;
+	hero.x += x; hero.y += y;
+}
+
+// Scrolling map feature.
+void scrollMap(void) {
+	int x = 0;
+	int y = 0;
+	if (hero.x < round(LCD_X * 0.15)) x += 1;
+	else if (hero.x + HW > round(LCD_X * 0.85)) x -= 1;
+	if (hero.y < round(LCD_Y * 0.15)) y += 1;
+	else if (hero.y + HH > round(LCD_Y * 0.85)) y -= 1;
+	moveAll(x, y);
+}
+
+
 // Initialises set amount of walls.
 void wallInit(void) {
 	wallAm = 6;
@@ -202,7 +210,6 @@ void wallInit(void) {
 	int drawnWall = 0;
 	bool valid = true;
 	for (int i = 0; i < wallAm; i++) {
-
 		do {
 			x = rand() % 50;
 			y = rand() % 50;
@@ -347,7 +354,6 @@ void userControlls(void) {
 	dxdy[0] = dx; dxdy[1] = dy;
 }
 
-
 // Hero movement.
 void moveHero(void) {
 	// Useful variables.
@@ -397,9 +403,10 @@ void moveHero(void) {
 		hero.y += dy;
 		hero.x += dx;
 	}
+	scrollMap();
 	// Wall collision.
   if (level == 1) {
-		staticMap();
+		// staticMap();
 	}
 }
 
