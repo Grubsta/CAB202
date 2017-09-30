@@ -13,7 +13,7 @@
 #include <sprite.h>
 #include <macros.h>
 #include "bitmaps.h"
-
+// check snake game for sprite trailing hero.
 
 // Configuration (sprite L & W).
 #define HW 16 // Hero.
@@ -27,10 +27,9 @@
 #define KH 3 // Key.
 #define KW 8
 #define VWH 44 // Vetical wall.
-#define VWW 3 // ### WAS 3
+#define VWW 3
 #define HWH 3 // horizontal wall.
-#define HWW 44 // ### WAS 44
-#define NW 6 // Number of walls.
+#define HWW 44
 
 #define thresh (1000)
 
@@ -55,7 +54,7 @@ double dx = 0;
 double dy = 0;
 int dxdy[1];
 // Player.
-int level = 1;
+int level = 2;
 int lives = 3;
 int score = 0;
 // Timer.
@@ -68,6 +67,8 @@ int treasureAm = 0;
 int wallAm;
 // Gameplay / Collisions.
 int XYarray[50];
+int screenHeight = 48;
+int screenWidth = 84;
 // int XYarray[NW - 1][2];
 bool keyColl = false;
 bool activated = false;
@@ -77,6 +78,7 @@ bool mapInitialised = false;
 bool enemyInitialised = false;
 uint16_t closedCon = 0;
 uint16_t openCon = 0;
+
 
 // Initialise sprites.
 Sprite hero; Sprite tower; Sprite door; Sprite key;
@@ -153,6 +155,27 @@ bool spriteCollision(Sprite sprite1, Sprite sprite2) {
 	}
 }
 
+
+bool gapCollision(Sprite sprite1, Sprite sprite2, int gap) {
+  // Sprite 1.
+  int spr1Bottom = round(sprite1.x + sprite1.height + gap);
+  int spr1Top = round(sprite1.y - gap);
+  int spr1Left = round(sprite1.x - gap);
+  int spr1Right = round(sprite1.x + sprite1.width + gap);
+  // Sprite 2.
+  int spr2Bottom = round(sprite2.y + sprite2.height + gap);
+  int spr2Top = round(sprite2.y - gap);
+  int spr2Left = round(sprite2.x - gap);
+  int spr2Right = round(sprite2.x + sprite2.width + gap);
+  // Creates a perimter arround sprites and checks for collision.
+	if (spr1Bottom < spr2Top || spr1Top > spr2Bottom || spr1Right < spr2Left|| spr1Left > spr2Right) {
+		return false;
+	}
+	else {
+		return true;
+	}
+}
+
 // Draws all sprites which objects are stored in an array.
 void drawAll(Sprite sprite[], int amount) {
 	// for (int i = 0; i < amount + 1; i++) {
@@ -160,24 +183,7 @@ void drawAll(Sprite sprite[], int amount) {
 	// }
 }
 
-// Draws each sprite in level.
-// void drawEverything(void) {
-// 	// if (level == 1) sprite_draw(&tower);
-// 	// else {
-// 	//
-// 	// }
-// 	// // sprite_draw(&enemy)
-// 	// if (enemyAm > 0) {
-// 	// 	for(int i = 0; i < amount + 1; i++) {
-// 	//
-// 	// 	}
-// 	// }
-// 	// sprite_draw(&door); sprite_draw(&key);
-// 	// drawAll(&enemy, enemyAm);
-// 	// drawAll(&treasure, treasureAm);
-// 	// drawAll(&wall, wallAm);
-// }
-
+// Initialises all sprites on first level.
 void level1Init(void) {
 	// Useful vairables.
 	int midX = LCD_X / 2;
@@ -191,59 +197,50 @@ void level1Init(void) {
 
 // Initialises set amount of walls.
 void wallInit(void) {
-	//
-	// for (int i = 0; i <= wallAm; i++) {
-	// 	bool valid = false;
-	// 	do {
-	// 		int x = rand() % LCD_X;
-	// 		int y = rand() % LCD_Y;
-	//
-	// 	} while (!valid);
-	//
-	// }
-	wallAm = rand() % 5;
-	int x;
-	int y;
-	for (int i = 0; i <= wallAm; i++) {
-		bool valid = false;
+	wallAm = 6;
+	int x, y;
+	int drawnWall = 0;
+	bool valid = true;
+	for (int i = 0; i < wallAm; i++) {
+
 		do {
 			x = rand() % 50;
 			y = rand() % 50;
-			int direction = rand() % (1 + 1);
+			int direction = rand() % 2;
 			if (direction == 1) { // Vertical direction.
 				sprite_init(&wall[i], x, y, VWW, VWH, vertWallBitmap);
 			} else { // horizontal direction.
 				sprite_init(&wall[i], x, y, HWW, HWH, horWallBitmap);
 			}
-			for (int a = 0; a <= wallAm; a++) { // 5-1 and make the fifth start at the same x1y1 as another
-				if (!spriteCollision(wall[i], wall[a])) valid = true; // ### NEED to compensate for wall gaps.
-				else valid = false;
+			if (drawnWall > 0) {
+				for (int a = 0; a < drawnWall; a++) { // 5-1 and make the fifth start at the same x1y1 as another
+					if (gapCollision(wall[i], wall[a], 8)) valid = false; // ### NEED to compensate for wall gaps.
+					else valid = true;
+				}
 			}
 		} while (!valid);
 		sprite_draw(&wall[i]);
+		drawnWall =+ 1;
 	}
 	wallInitialised = true;
 }
 
-// Initialises array sprites.
-void spriteInit(void) {
-
-}
 
 // Initialises all the sprites on the map.
 void mapInit(void) {
 	for (int i = 0; i < 50; i++) {
-		XYarray[i] = rand() % 50;
+		XYarray[i] = rand() % 40;
 	}
-	sprite_init(&door, XYarray[15], XYarray[42], DW, DH, doorBitmap);
+	sprite_init(&door, XYarray[8], XYarray[43], DW, DH, doorBitmap);
 	sprite_init(&key, XYarray[2], XYarray[33], KW, KH, keyBitmap);
-	for(int i = 0; i < 50; i++) {
+	for(int i = 0; i < treasureAm; i++) {
 		int x = rand() % 50, y = rand() % 50;
-		sprite_init(&key, XYarray[x], XYarray[y], TW, TH, treasureBitmap);
+		sprite_init(&treasure[i], XYarray[x], XYarray[y], TW, TH, treasureBitmap);
 	}
 	wallInit();
 	initHero();
 	// enemyInit();
+	mapInitialised = true;
 }
 
 // Initialises level skeleton and draws it.
@@ -265,14 +262,12 @@ void drawLvl(void) {
 		enemyMovement();
   }
 	// Random level sprites.
-  else { // ### ADD 6 walls when scolling map feature complete
-		// if (!wallInitialised) wallInit();
-		// if (!enemyInitialised) enemyInit();
+  else {
 		if (!mapInitialised) mapInit();
 		for (int i = 0; i < wallAm; i++)sprite_draw(&wall[i]);
 		for (int i = 0; i < enemyAm; i++) sprite_draw(&enemy[i]);
 		for (int i = 0; i < treasureAm; i++) sprite_draw(&treasure[i]);
-
+		sprite_draw(&door); sprite_draw(&key);
 
 
   }
@@ -370,11 +365,6 @@ void moveHero(void) {
 			enColl = true;
 		}
 	}
-	if (spriteCollision(hero, key)) { // ### HIDE sprites
-		keyColl = true;
-		key.x = 150;
-		key.y = 150;
-	}
 	// Checking for collisions.
 	if (enColl) {
 		lives -= 1;
@@ -387,21 +377,21 @@ void moveHero(void) {
 		key.y = 150;
 	}
 	else if (spriteCollision(hero, door)) {
-		if (!keyColl) {
-			hero.y -= yy;
-			hero.x -= xx;
-		}
-		else {
+		if (keyColl) {
 			level += 1;
 			score += 100;
 			destroyGame();
 			loadingScreen();
 		}
+		else {
+			hero.y -= yy;
+			hero.x -= xx;
+		}
 	}
-	// else if (spriteCollision(hero, tower)) {
-	// 	hero.y -= yy;
-	// 	hero.x -= xx;
-	// }
+	else if (spriteCollision(hero, tower)) {
+		hero.y -= yy;
+		hero.x -= xx;
+	}
 	// If no collisions occur, move hero.
 	else {
 		hero.y += dy;
@@ -409,8 +399,8 @@ void moveHero(void) {
 	}
 	// Wall collision.
   if (level == 1) {
-    staticMap();
-  }
+		staticMap();
+	}
 }
 
 // Welcome Screen.
@@ -433,6 +423,7 @@ void welcomeScreen(void) {
 	}
 }
 
+// Game over menu.
 void gameOverScreen(void) {
 	clear_screen();
 	char lev[50];char scor[50];
@@ -483,6 +474,7 @@ void setup(void) {
   drawLvl();
   sprite_draw(&hero);
   show_screen();
+
 }
 
 // Process (ran every frame).
