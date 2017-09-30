@@ -54,7 +54,7 @@ double dx = 0;
 double dy = 0;
 int dxdy[1];
 // Player.
-int level = 2;
+int level = 1;
 int lives = 3;
 int score = 0;
 // Timer.
@@ -195,10 +195,10 @@ void moveAll(int x, int y) {
 void scrollMap(void) {
 	int x = 0;
 	int y = 0;
-	if (hero.x < round(LCD_X * 0.15)) x += 1;
-	else if (hero.x + HW > round(LCD_X * 0.85)) x -= 1;
-	if (hero.y < round(LCD_Y * 0.15)) y += 1;
-	else if (hero.y + HH > round(LCD_Y * 0.85)) y -= 1;
+	if (hero.x < round(LCD_X * 0.15) && hero.x > -33 && hero.x < 117) x += 1;
+	else if (hero.x + HW > round(LCD_X * 0.85) && hero.x > -33 && hero.x < 117) x -= 1;
+	if (hero.y < round(LCD_Y * 0.15) && hero.y > -21 && hero.y < 69) y += 1;
+	else if (hero.y + HH > round(LCD_Y * 0.85) && hero.y > -21 && hero.y < 69) y -= 1;
 	moveAll(x, y);
 }
 
