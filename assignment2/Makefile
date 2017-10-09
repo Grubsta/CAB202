@@ -43,5 +43,5 @@ clean:
 rebuild: clean all
 
 %.hex : %.c
-	avr-gcc $< $(TEENSY_FLAGS) $(TEENSY_DIRS) $(TEENSY_LIBS) -o $@.obj
+	avr-gcc $< $(TEENSY_FLAGS) $(TEENSY_DIRS) $(TEENSY_LIBS) -o $@.obj usb_serial.c
 	avr-objcopy -O ihex $@.obj $@
