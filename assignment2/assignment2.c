@@ -13,6 +13,8 @@
 #include <sprite.h>
 #include <macros.h>
 #include "bitmaps.h"
+#include "usb_serial.h"
+
 // check snake game for sprite trailing hero.
 
 // Configuration (sprite L & W).
@@ -62,7 +64,7 @@ int seconds = 0;
 int minutes = 0;
 int timeCounter = 0;
 // Sprite amounts.
-int enemyAm = 1;
+int enemyAm = 5;
 int treasureAm = 0;
 int wallAm;
 // Gameplay / Collisions.
@@ -82,10 +84,30 @@ uint16_t openCon = 0;
 int wallX1 = -33, wallX2 = 117;
 int wallY1 = -21, wallY2 = 69;
 
-
 // Initialise sprites.
 Sprite hero; Sprite tower; Sprite door; Sprite key;
 Sprite enemy[5]; Sprite treasure[5]; Sprite wall[5];
+
+// Terminal output strings
+// char *gameStatsT = ("~~~~~~~~~~~~~~~~~~~~~\n
+// Current run-time: {0}:{1}\n
+// 					 Score: {2}\n
+// 					 Level: {3}\n
+// 		X,Y Location: {4},{5}\n
+//  Remaining lives: {6}", minutes, seconds, score, level, hero.x, hero.y, lives);
+ char *heroDeathT = ("An enemy has killed the hero.");
+ char *enemyDeathT = ("An enemy has been shot till death by the hero.");
+ char *sheildCollT = ("The hero has picked up a shield. +1 protection.");
+ char *keyCollT = ("The hero has retrieved the key.");
+ char *bowCollT = ("The hero has collected the bow.");
+ char *bombCollT = ("The hero has located da bomb.");
+ char *shieldUsedT = ("An enemy has destroyed the heros shield. -1 protection.");
+ // char *keyUsedT = ("The player has unlocked the door with the key.\nCongratulations on finishing floor {0}.", level);
+ char *bowUsedT = ("The hero has shot the bow.");
+ char *bombUsedT = ("The hero has detonated the bomb.");
+
+ // void setup_usb_serial( void );
+ // void usb_serial_send(char * message);
 
 // Initialise hero.
 void initHero(void) {
@@ -93,6 +115,7 @@ void initHero(void) {
 	int y = LCD_Y / 2 + HH + 3;
 	sprite_init(&hero, x, y, HW, HH, heroBitmap);
 }
+
 
 // Moves enemy sprite towards hero's location.
 void enemyMovement() { // ### Fix to allow enemy array.
@@ -107,55 +130,36 @@ void enemyMovement() { // ### Fix to allow enemy array.
 }
 
 
-// Draws layered border around map. ### soooo broken.
-void drawBorder(int dx, int dy) {
-	wallX1 += dx; wallX2 += dx;
-	wallY1 += dy; wallY2 += dy;
-	// int y2 = 69 + dy;
-	for (int i = 0; i <= 4; i++) {
-		draw_line(wallX1 - i, wallY1 - i, wallX2 + i, wallY1 - i, FG_COLOUR);
-	}
-	for (int i = 0; i <= 4; i++) {
-		draw_line(wallX1 - i, wallY1 - i, wallX1 - i, wallY2 + i, FG_COLOUR);
-	}
-	for (int i = 0; i <= 4; i++) {
-		draw_line(wallX1 - i, wallY2 - i, wallX2 + i, wallY2 - i, FG_COLOUR);
-	}
-	for (int i = 0; i <= 4; i++) {
-		draw_line(wallX2 - i, wallY1 - i, wallX2 - i, wallY2 + i, FG_COLOUR);
-	}
+// // Draws layered border around map. ### soooo broken.
+// void drawBorder(int dx, int dy) {
+// 	wallX1 += dx; wallX2 += dx;
+// 	wallY1 += dy; wallY2 += dy;
+// 	// int y2 = 69 + dy;
+// 	for (int i = 0; i <= 4; i++) {
+// 		draw_line(wallX1 - i, wallY1 - i, wallX2 + i, wallY1 - i, FG_COLOUR);
+// 	}
+// 	for (int i = 0; i <= 4; i++) {
+// 		draw_line(wallX1 - i, wallY1 - i, wallX1 - i, wallY2 + i, FG_COLOUR);
+// 	}
+// 	for (int i = 0; i <= 4; i++) {
+// 		draw_line(wallX1 - i, wallY2 - i, wallX2 + i, wallY2 - i, FG_COLOUR);
+// 	}
+// 	for (int i = 0; i <= 4; i++) {
+// 		draw_line(wallX2 - i, wallY1 - i, wallX2 - i, wallY2 + i, FG_COLOUR);
+// 	}
+// }
 
-}
 
-// Colision detection for static map walls.
+// Colision detection for static map walls. ###
 void staticMap(void) {
   int x = round(hero.x); int y = round(hero.y);
-  if (x < 1 || x + HW >= LCD_X ) hero.x -= dx;
-  if (y - 2  < 0 || y + HH >= LCD_Y - 1) hero.y -= dy;
+  if (x < -33 || x + HW >= 117 ) hero.x -= dx;
+  if (y - 2  < -21 || y + HH >= 69) hero.y -= dy;
+	// if (x < - )
 }
+
 
 // Collision detection between 2 sprites.
-bool spriteCollision(Sprite sprite1, Sprite sprite2) {
-  // Sprite 1.
-  int spr1Bottom = round(sprite1.x + sprite1.height);
-  int spr1Top = round(sprite1.y);
-  int spr1Left = round(sprite1.x);
-  int spr1Right = round(sprite1.x + sprite1.width);
-  // Sprite 2.
-  int spr2Bottom = round(sprite2.y + sprite2.height);
-  int spr2Top = round(sprite2.y);
-  int spr2Left = round(sprite2.x);
-  int spr2Right = round(sprite2.x + sprite2.width);
-  // Creates a perimter arround sprites and checks for collision.
-	if (spr1Bottom < spr2Top || spr1Top > spr2Bottom || spr1Right < spr2Left|| spr1Left > spr2Right) {
-		return false;
-	}
-	else {
-		return true;
-	}
-}
-
-
 bool gapCollision(Sprite sprite1, Sprite sprite2, int gap) {
   // Sprite 1.
   int spr1Bottom = round(sprite1.x + sprite1.height + gap);
@@ -176,6 +180,7 @@ bool gapCollision(Sprite sprite1, Sprite sprite2, int gap) {
 	}
 }
 
+
 // Initialises all sprites on first level.
 void level1Init(void) {
 	// Useful vairables.
@@ -187,6 +192,7 @@ void level1Init(void) {
 	sprite_init(&door, midX - DW / 2, TH - DH, DW, DH, doorBitmap);
 	lvlInit = true;
 }
+
 
 // Moves all sprites dependent on xy values.
 void moveAll(int x, int y) {
@@ -209,6 +215,7 @@ void moveAll(int x, int y) {
 	hero.x += x; hero.y += y;
 }
 
+
 // Scrolling map feature.
 void scrollMap(void) {
 	int x = 0;
@@ -218,7 +225,8 @@ void scrollMap(void) {
 	if (hero.y < round(LCD_Y * 0.15) && hero.y > wallY1 && hero.y < wallY2) y += 1;
 	else if (hero.y + HH > round(LCD_Y * 0.85) && hero.y > wallY1 && hero.y < wallY2) y -= 1;
 	moveAll(x, y);
-	drawBorder(x, y);
+
+	// drawBorder(x, y);
 }
 
 
@@ -230,12 +238,12 @@ void wallInit(void) {
 	bool valid = true;
 	for (int i = 0; i < wallAm; i++) {
 		do {
-			x = rand() % 50;
-			y = rand() % 50;
+			x = rand() % 100;
+			y = rand() % 90;
 			int direction = rand() % 2;
 			if (direction == 1) { // Vertical direction.
 				sprite_init(&wall[i], x, y, VWW, VWH, vertWallBitmap);
-			} else { // horizontal direction.
+			} else { // Horizontal direction.
 				sprite_init(&wall[i], x, y, HWW, HWH, horWallBitmap);
 			}
 			if (drawnWall > 0) {
@@ -252,6 +260,44 @@ void wallInit(void) {
 }
 
 
+// X-value collision detection.
+// bool xCollision(Sprite sprite1, Sprite sprite2){
+//   // Sprite 1.
+//   int sprite1Left = round(sprite1.x);
+//   int sprite1Right = round(sprite1.x) + sprite1.width;
+//   // Sprite 2.
+//   int sprite2Left = round(sprite2.x);
+//   int sprite2Right = round(sprite2.x) + sprite2.width;
+//   if (sprite1Left <= sprite2Right + 1 && sprite1Right >= sprite2Left - 1) return true;
+//   else return false;
+// }
+//
+//
+// // Y-value collision detection.
+// bool yCollision(Sprite sprite1, Sprite sprite2){
+//   // Sprite 1.
+//   int sprite1Bottom = round(sprite1.y) + sprite1.width;
+//   int sprite1Top = round(sprite1.y);
+//   // Sprite 2.
+//   int sprite2Bottom = round(sprite2.y) + sprite2.width;
+//   int sprite2Top =  round(sprite2.y);
+// 	for (int i = 0; i <= sprite1.width) {
+// 		if (sprite1Bottom == sprite2Top + 1 + i || sprite1Top == sprite2Bottom + 1 - i) return true;
+// 	}
+// 	else return false;
+// }
+
+
+// Initialises all the enemy sprites.
+void enemyInit() {
+  int x, y;
+  for (int i = 0; i < enemyAm; i++) {
+    x = rand() % 100; y = rand() % 85;
+    sprite_init(&enemy[i], x, y, EW, EH, enemyBitmap);
+  }
+}
+
+
 // Initialises all the sprites on the map.
 void mapInit(void) {
 	for (int i = 0; i < 50; i++) {
@@ -265,14 +311,13 @@ void mapInit(void) {
 	}
 	wallInit();
 	initHero();
-	// enemyInit();
+	enemyInit();
 	mapInitialised = true;
 }
 
+
 // Initialises level skeleton and draws it.
 void drawLvl(void) {
-	// int screenSizeX = 84; // ### Change for scrolling map feature.
-	// int screenSizeY = 48;
 	// Useful variables.
 	int maxY = LCD_Y - 1;
 	int maxX = LCD_X - 1;
@@ -287,17 +332,16 @@ void drawLvl(void) {
     sprite_draw(&key);
 		enemyMovement();
   }
-	// Random level sprites.
+	// Randomly generated level sprites.
   else {
 		if (!mapInitialised) mapInit();
-		for (int i = 0; i < wallAm; i++)sprite_draw(&wall[i]);
-		for (int i = 0; i < enemyAm; i++) sprite_draw(&enemy[i]);
+    enemyMovement();
+		for (int i = 0; i < wallAm; i++) sprite_draw(&wall[i]);
 		for (int i = 0; i < treasureAm; i++) sprite_draw(&treasure[i]);
 		sprite_draw(&door); sprite_draw(&key);
-
-
   }
 }
+
 
 // Destroys entire level. ###
 void destroyGame(void) {
@@ -313,6 +357,7 @@ void destroyGame(void) {
 	keyColl = false;
 }
 
+
 // Loading screen between levels.
 void loadingScreen(void) {
 	clear_screen();
@@ -322,6 +367,7 @@ void loadingScreen(void) {
 	show_screen();
 	_delay_ms(2000);
 }
+
 
 // Display Menu during gameplay.
 void displayMenu(void) {
@@ -333,6 +379,7 @@ void displayMenu(void) {
 	sprintf(timer, "Time: %02d:%02d", minutes, seconds); draw_string(0, 30, timer, FG_COLOUR);
 	show_screen();
 }
+
 
 // User input from PewPew switches.
 void userControlls(void) {
@@ -373,6 +420,7 @@ void userControlls(void) {
 	dxdy[0] = dx; dxdy[1] = dy;
 }
 
+
 // Hero movement.
 void moveHero(void) {
 	// Useful variables.
@@ -386,22 +434,30 @@ void moveHero(void) {
 	dy = dxdy[1];
 	// Array sprite Collisions.
 	for (int i = 0; i < enemyAm; i++) {
-		if (spriteCollision(hero, enemy[i])) {
+		if (gapCollision(hero, enemy[i], 0)) {
 			enColl = true;
 		}
 	}
-	// Checking for collisions.
-	if (enColl) {
-		lives -= 1;
-		enColl = false;
-		destroyGame();
-	}
-	else if (spriteCollision(hero, key)) { // ### HIDE sprites
+	if (gapCollision(hero, key, 2)) {
 		keyColl = true;
 		key.x = 150;
 		key.y = 150;
 	}
-	else if (spriteCollision(hero, door)) {
+	if (level == 1) {
+		if (gapCollision(hero, tower, 0)) {
+			hero.y -= yy;
+			hero.x -= xx;
+			dx = 0;
+			dy = 0;
+		}
+	}
+	// Checking for collisions.
+	if (enColl) {
+		destroyGame();
+		lives -= 1;
+		enColl = false;
+	}
+	else if (gapCollision(hero, door, 1)) {
 		if (keyColl) {
 			level += 1;
 			score += 100;
@@ -413,10 +469,7 @@ void moveHero(void) {
 			hero.x -= xx;
 		}
 	}
-	else if (spriteCollision(hero, tower)) {
-		hero.y -= yy;
-		hero.x -= xx;
-	}
+
 	// If no collisions occur, move hero.
 	else {
 		hero.y += dy;
@@ -424,10 +477,10 @@ void moveHero(void) {
 	}
 	scrollMap();
 	// Wall collision.
-  if (level == 1) {
-		// staticMap();
-	}
+	staticMap();
+
 }
+
 
 // Welcome Screen.
 void welcomeScreen(void) {
@@ -449,6 +502,7 @@ void welcomeScreen(void) {
 	}
 }
 
+
 // Game over menu.
 void gameOverScreen(void) {
 	clear_screen();
@@ -460,9 +514,12 @@ void gameOverScreen(void) {
 	show_screen(); //### Add button press to restart gameplay.
 }
 
+
 // Initialise Timer.
 void timer(void) {
 	timeCounter++;
+	// if (timerCounter == 5) {
+
 	if (timeCounter == 10) {
 	seconds++;
 	timeCounter = 0;
@@ -475,6 +532,10 @@ void timer(void) {
 		}
 	}
 }
+
+
+
+
 
 // Enables input from PewPew switches.
 void initControls(void) {
@@ -489,19 +550,33 @@ void initControls(void) {
 	CLEAR_BIT(DDRF, 5); // Right.
 }
 
+
 // Setup (ran on start).
 void setup(void) {
   set_clock_speed(CPU_8MHz);
+	usb_init();
+	// // ###
+	// // Set Timer 0 to overflow approx 122 times per second.
+	// TCCR0B |= 4;
+	// TIMSK0 = 1;
+	// Enable interrupts.
+	sei();
+	// // ###
+	// while(!usb_configured()) {
+	// 	draw_string(0, 30, "Connect to a \nserial terminal", FG_COLOUR);
+	// };
+	// char *ANSI = "Welcome to ANSI";
+	// usb_serial_send(ANSI);
   initControls();
   lcd_init(LCD_DEFAULT_CONTRAST);
 	timer();
-	// welcomeScreen();
+	welcomeScreen();
   clear_screen();
   drawLvl();
   sprite_draw(&hero);
   show_screen();
-
 }
+
 
 // Process (ran every frame).
 void process(void) {
@@ -517,6 +592,7 @@ void process(void) {
 		gameOverScreen();
 	}
 }
+
 
 // Main loop.
 int main(void) {
