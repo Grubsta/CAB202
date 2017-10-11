@@ -6,6 +6,7 @@
 #include <stdbool.h>
 #include <math.h>
 #include <avr/io.h>
+#include <avr/pgmspace.h>
 #include <avr/interrupt.h>
 #include <util/delay.h>
 #include <cpu_speed.h>
@@ -14,8 +15,9 @@
 #include <macros.h>
 #include "bitmaps.h"
 #include "usb_serial.h"
-
+#include "cab202_adc.h"
 // check snake game for sprite trailing hero.
+
 
 // Configuration (sprite L & W).
 #define HW 16 // Hero.
@@ -94,15 +96,9 @@ int wallY1 = -10, wallY2 = 58;
 // Initialise sprites.
 Sprite hero; Sprite tower; Sprite door; Sprite key;
 Sprite enemy[5]; Sprite treasure[5]; Sprite wall[5];
-Sprite shield; Sprite bow; Sprite bomb;
+Sprite shield; Sprite bow; Sprite bomb; Sprite crosshair;
 
 // Terminal output strings
-// sprintf(*gameStatsT, "~~~~~~~~~~~~~~~~~~~~~" +
-// " Current run-time: {0}:{1}" +
-// "			  		 Score: {2}" +
-// "		  			 Level: {3}" +
-// "	  	X,Y Location: {4},{5}" +
-// "  Remaining lives: {6}", minutes, seconds, score, level, hero.x, hero.y, lives);
  char *heroDeathT = ("An enemy has killed the hero.");
  char *enemyDeathT = ("An enemy has been shot till death by the hero.");
  char *sheildCollT = ("The hero has picked up a shield. +1 protection.");
@@ -125,6 +121,17 @@ void initHero(void) {
 }
 
 
+void send_str(const char *s)
+{
+	char c;
+	while (1) {
+		c = pgm_read_byte(s++);
+		if (!c) break;
+		usb_serial_putchar(c);
+	}
+}
+
+
 // Moves enemy sprite towards hero's location.
 void enemyMovement() {
 	float enemySpeed = 0.1;
@@ -135,6 +142,16 @@ void enemyMovement() {
 		else if (enemy[i].y > hero.y) enemy[i].y -= enemySpeed;
 		sprite_draw(&enemy[i]);
 	}
+}
+
+
+void crosshairMovement(void) {
+  int left_adc = adc_read(0);
+  int right_adc = adc_read(1);
+
+  crosshair.x = (double) left_adc * (LCD_X - crosshair.width) / 1024;
+  crosshair.y = (double) right_adc * (LCD_Y - crosshair.height) / 1024;
+  sprite_draw(&crosshair);
 }
 
 
@@ -170,6 +187,7 @@ void level1Init(void) {
 	sprite_init(&enemy[0], LCD_X * 0.85, LCD_Y * 0.50, EW, EH, enemyBitmap); // ### relocate enemy to allow for movement
 	sprite_init(&key, LCD_X * 0.15 - KW, LCD_Y * 0.50, KW, KH, keyBitmap);
  	sprite_init(&door, midX - DW / 2, TH - DH, DW, DH, doorBitmap);
+  sprite_init(&crosshair, LCD_X * 0.5, LCD_Y * 0.5, 3, 3, crosshairBitmap); //### TEMP
 	lvlInit = true;
 }
 
@@ -209,8 +227,8 @@ void scrollMap(void) {
 	else if (hero.x + HW > round(LCD_X * 0.85) && hero.x > -33 && hero.x < wallX2) x -= 1;
 	if (hero.y < round(LCD_Y * 0.15) && hero.y > wallY1 && hero.y < wallY2) y += 1;
 	else if (hero.y + HH > round(LCD_Y * 0.85) && hero.y > wallY1 && hero.y < wallY2) y -= 1;
-  if ( round(hero.x) < -33 ||  round(hero.x) + HW >= 117 ) hero.x -= x; // ###
-  if (round(hero.y) - 2  < -21 || round(hero.y) + HH >= 69) hero.y -= y; // ###
+  if ( round(hero.x) < -33 ||  round(hero.x) + HW >= 117 ) x = 0;
+  if (round(hero.y) - 2  < -21 || round(hero.y) + HH >= 69) y = 0;
 	moveAll(x, y);
 }
 
@@ -223,9 +241,11 @@ void wallInit(void) {
 	bool valid = true;
 	for (int i = 0; i < wallAm; i++) {
 		do {
-			x = rand() % 100;
-			y = rand() % 90;
-			int direction = rand() % 2;
+			x = rand() % wallX2 + (wallX1 * 1) - 12;
+      x += wallX1;
+			y = rand() % wallY2 + (wallY1 * 1) - 12;
+      y += wallY1;
+			int direction = rand() % 1;
 			if (direction == 1) { // Vertical direction.
 				sprite_init(&wall[i], x, y, VWW, VWH, vertWallBitmap);
 			} else { // Horizontal direction.
@@ -282,12 +302,13 @@ void enemyInit(void) { ///### inits broken, fix later
   }
 }
 
+
 // Initialises all the treasure sprites.
 void treasureInit(void) { ///### inits broken, fix later
   int x, y;
   for (int i = 0; i < treasureAm; i++) {
     x = rand() % 100; y = rand() % 85;
-    sprite_init(&treasure[i], x, y, TW, TH, treasureBitmap);
+    sprite_init(&treasure[i], x, y, 8, 4, treasureBitmap);
   }
 }
 
@@ -299,7 +320,7 @@ void mapInit(void) {
 	}
 	sprite_init(&door, XYarray[8], XYarray[43], DW, DH, doorBitmap);
 	sprite_init(&key, XYarray[2], XYarray[33], KW, KH, keyBitmap);
-  // treasureInit();
+  treasureInit();
 	// wallInit();
 	initHero();
   defenceInit();
@@ -316,6 +337,8 @@ void drawLvl(void) {
     sprite_draw(&tower); sprite_draw(&door); sprite_draw(&key);
     sprite_draw(&wall[0]); sprite_draw(&wall[1]);
 		enemyMovement();
+    crosshairMovement();
+    // sprite_draw(&crosshair);
   }
 	// Randomly generated level sprites.
   else {
@@ -332,7 +355,6 @@ void drawLvl(void) {
 // Enables sprites to trail sprites.
 void spriteTrail(Sprite sprite1) {
   int x = hero.x - 3; int y = hero.y + HH * 1.5;
-  // if (spriteTrailed) x += HW + 3;
   sprite1.x = x; sprite1.y = y;
 }
 
@@ -516,7 +538,7 @@ void welcomeScreen(void) {
 // Game over menu.
 void gameOverScreen(void) {
 	clear_screen();
-	char lev[50];char scor[50];
+	char lev[50]; char scor[50];
 	draw_string(0, 0, "You died in ANZI!", FG_COLOUR);
 	sprintf(lev, "level: %d", level); draw_string(0, 10, lev, FG_COLOUR);
 	sprintf(scor, "final score: %d", score); draw_string(0, 20, scor, FG_COLOUR);
@@ -525,10 +547,23 @@ void gameOverScreen(void) {
 }
 
 
+// Serial output for common game stats.
+void serialOutput(void) {
+  int x = hero.x; int y = hero.y;
+  char gameStatsT[60];
+  sprintf(gameStatsT, "~~~~~~~~~~~~~~~~~~~~~\r\n\r\n"
+  " Current run-time: %02d:%02d\r\n\r\n"
+  "			  		 Score: %d\r\n\r\n"
+  "		  			 Level: %d\r\n\r\n"
+  "	  	X,Y Location: %d,%d\r\n\r\n"
+  "  Remaining lives: %d", minutes, seconds, score, level, x, y, lives);
+  send_str(PSTR(gameStatsT, 60));
+}
+
+
 // Initialise Timer.
 void timer(void) {
 	timeCounter++;
-
 	if (timeCounter == 10) {
 	seconds++;
 	timeCounter = 0;
@@ -536,11 +571,11 @@ void timer(void) {
 		seconds = 0;
 		minutes++;
 			if (minutes == 100) {
-			  // game_over = true;
 			}
 		}
 	}
 }
+
 
 
 // Enables input from PewPew switches.
@@ -561,31 +596,34 @@ void initControls(void) {
 void setup(void) {
   set_clock_speed(CPU_8MHz);
 	usb_init();
-	// // ###
-	// // Set Timer 0 to overflow approx 122 times per second.
-	// TCCR0B |= 4;
-	// TIMSK0 = 1;
-	// Enable interrupts.
-	// sei();
-	// // ###
-	// while(!usb_configured()) {
-	// 	draw_string(0, 30, "Connect to a \nserial terminal", FG_COLOUR);
-	// };
-	// char *ANSI = "Welcome to ANSI";
-	// usb_serial_send(ANSI);
-  initControls();
+  adc_init();
   lcd_init(LCD_DEFAULT_CONTRAST);
-	timer();
-	// welcomeScreen();
+  timer();
+  DDRD |= (1<<6);
+  PORTD |= (1<<6);
+  clear_screen();
+  draw_string(0, 10, "Connect to a ", FG_COLOUR);
+  draw_string(0, 20, "serial terminal", FG_COLOUR);
+  draw_string(0, 30, "to continue", FG_COLOUR);
+  show_screen();
+	// while(!usb_configured());
+  // while(!(usb_serial_get_control() & USB_SERIAL_DTR))
+  // usb_serial_flush_input();
+
+  PORTD &= ~(1<<6);
+  send_str(PSTR("Welcome to ANSI\r\n"));
+  initControls();
+	welcomeScreen();
   clear_screen();
   drawLvl();
   sprite_draw(&hero);
   show_screen();
 }
 
-
+int clockTime = 0;
 // Process (ran every frame).
 void process(void) {
+  clockTime += 10;
 	if (lives > 0) {
 		clear_screen();
 		timer();
@@ -596,6 +634,10 @@ void process(void) {
 	else {
 		gameOverScreen();
 	}
+  if (clockTime == 500) {
+    clockTime = 0;
+    serialOutput();
+  }
 }
 
 
