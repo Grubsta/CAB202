@@ -131,6 +131,12 @@ uint8_t bombBitmap[] = {
   0b11110000,
   0b01100000,
 };
+// 8 x 3
+uint8_t crosshairBitmap[] = {
+  0b01000000,
+  0b11100000,
+  0b01000000,
+};
 // 10 x 24
 uint8_t doorBitmap[] = {
   0b00000000, 0b00111100, 0b00000000,
