@@ -39,10 +39,12 @@
 
 
 // TODO : ###
-// 12. Random location generator (apply to all array sprites)
-// 13. Scrolling map (half done)
-// 15. Character attack/defense mechanisms
-// 16. USB Serial Debugging Interface
+// FIX SCREEN movement
+// FIX RANDOM generator
+// FIX COLLISION Y value
+// ADD ARROWS TO bow
+// ADD BOMB FUNCTION
+// ADD FORMATTED SENTENCES TO SERIAL DEBUUGGA
 
 // NEED TO KNOWS
 // SCREEN = 84x48
@@ -62,8 +64,8 @@ int seconds = 0;
 int minutes = 0;
 int timeCounter = 0;
 // Sprite amounts.
-int enemyAm = 5;
-int treasureAm = 0;
+int enemyAm = 1;
+int treasureAm = 5;
 int wallAm;
 // Gameplay / Collisions.
 int XYarray[50];
@@ -84,7 +86,6 @@ bool bowTrailed = false;
 bool bombTrailed = false;
 bool shieldTrailed = false;
 bool keyTrailed = false;
-
 uint16_t closedCon = 0;
 uint16_t openCon = 0;
 
@@ -120,7 +121,15 @@ void initHero(void) {
 	sprite_init(&hero, x, y, HW, HH, heroBitmap);
 }
 
+// Colisions for static map edges. ### FIX
+void staticMap(void) {
+  int x = round(hero.x); int y = round(hero.y);
+  if (x < 0 || x + HW >= LCD_X - 1) hero.x -= dx;
+  if (y < 0 || y + HH >= LCD_Y - 1) hero.y -= dy;
 
+}
+
+// Sends inputted string via serial connection.
 void send_str(const char *s)
 {
 	char c;
@@ -145,10 +154,10 @@ void enemyMovement() {
 }
 
 
+// Moves crosshair dependent on petentiometer input.
 void crosshairMovement(void) {
   int left_adc = adc_read(0);
   int right_adc = adc_read(1);
-
   crosshair.x = (double) left_adc * (LCD_X - crosshair.width) / 1024;
   crosshair.y = (double) right_adc * (LCD_Y - crosshair.height) / 1024;
   sprite_draw(&crosshair);
@@ -158,15 +167,15 @@ void crosshairMovement(void) {
 // Collision detection between 2 sprites.
 bool gapCollision(Sprite sprite1, Sprite sprite2, int gap) {
   // Sprite 1.
-  int spr1Bottom = round(sprite1.x + sprite1.height + gap);
-  int spr1Top = round(sprite1.y - gap);
-  int spr1Left = round(sprite1.x - gap);
-  int spr1Right = round(sprite1.x + sprite1.width + gap);
+  int spr1Bottom = sprite1.x + sprite1.height + gap;
+  int spr1Top = sprite1.y - gap;
+  int spr1Left = sprite1.x - gap;
+  int spr1Right = sprite1.x + sprite1.width + gap;
   // Sprite 2.
-  int spr2Bottom = round(sprite2.y + sprite2.height + gap);
-  int spr2Top = round(sprite2.y - gap);
-  int spr2Left = round(sprite2.x - gap);
-  int spr2Right = round(sprite2.x + sprite2.width + gap);
+  int spr2Bottom = sprite2.y + sprite2.height + gap;
+  int spr2Top = sprite2.y - gap;
+  int spr2Left = sprite2.x - gap;
+  int spr2Right = sprite2.x + sprite2.width + gap;
   // Creates a perimter arround sprites and checks for collision.
 	if (spr1Bottom < spr2Top || spr1Top > spr2Bottom || spr1Right < spr2Left|| spr1Left > spr2Right) {
 		return false;
@@ -184,10 +193,10 @@ void level1Init(void) {
   sprite_init(&wall[0], 2, 0 - VWH, VWW, VWH, vertWallBitmap);
   sprite_init(&wall[1], 80, 0 - VWH, VWW, VWH, vertWallBitmap);
   sprite_init(&tower, 2, 0, TW, TH, towerBitmap);
-	sprite_init(&enemy[0], LCD_X * 0.85, LCD_Y * 0.50, EW, EH, enemyBitmap); // ### relocate enemy to allow for movement
+	sprite_init(&enemy[0], LCD_X * 0.85, LCD_Y * 0.50, EW, EH, enemyBitmap);
 	sprite_init(&key, LCD_X * 0.15 - KW, LCD_Y * 0.50, KW, KH, keyBitmap);
  	sprite_init(&door, midX - DW / 2, TH - DH, DW, DH, doorBitmap);
-  sprite_init(&crosshair, LCD_X * 0.5, LCD_Y * 0.5, 3, 3, crosshairBitmap); //### TEMP
+  // sprite_init(&crosshair, LCD_X * 0.5, LCD_Y * 0.5, 3, 3, crosshairBitmap); //### TEMP
 	lvlInit = true;
 }
 
@@ -218,6 +227,8 @@ void moveAll(int x, int y) {
 	hero.x += x; hero.y += y;
 }
 
+int screenX = 0;
+int screenY = 0;
 
 // Scrolling map feature.
 void scrollMap(void) {
@@ -227,8 +238,9 @@ void scrollMap(void) {
 	else if (hero.x + HW > round(LCD_X * 0.85) && hero.x > -33 && hero.x < wallX2) x -= 1;
 	if (hero.y < round(LCD_Y * 0.15) && hero.y > wallY1 && hero.y < wallY2) y += 1;
 	else if (hero.y + HH > round(LCD_Y * 0.85) && hero.y > wallY1 && hero.y < wallY2) y -= 1;
-  if ( round(hero.x) < -33 ||  round(hero.x) + HW >= 117 ) x = 0;
-  if (round(hero.y) - 2  < -21 || round(hero.y) + HH >= 69) y = 0;
+  screenX += x; screenY += y;
+  if (screenX <= -33 || screenX >= 33) x = 0; // #### DEBATABLY WORKING
+  if (screenY <= -21 || screenY >= 21) y = 0;
 	moveAll(x, y);
 }
 
@@ -308,7 +320,7 @@ void treasureInit(void) { ///### inits broken, fix later
   int x, y;
   for (int i = 0; i < treasureAm; i++) {
     x = rand() % 100; y = rand() % 85;
-    sprite_init(&treasure[i], x, y, 8, 4, treasureBitmap);
+    sprite_init(&treasure[i], x, y, 8, 3, treasureBitmap);
   }
 }
 
@@ -320,11 +332,11 @@ void mapInit(void) {
 	}
 	sprite_init(&door, XYarray[8], XYarray[43], DW, DH, doorBitmap);
 	sprite_init(&key, XYarray[2], XYarray[33], KW, KH, keyBitmap);
-  treasureInit();
+  // treasureInit();
 	// wallInit();
 	initHero();
   defenceInit();
-	// enemyInit();
+	enemyInit();
 	mapInitialised = true;
 }
 
@@ -337,8 +349,7 @@ void drawLvl(void) {
     sprite_draw(&tower); sprite_draw(&door); sprite_draw(&key);
     sprite_draw(&wall[0]); sprite_draw(&wall[1]);
 		enemyMovement();
-    crosshairMovement();
-    // sprite_draw(&crosshair);
+    // crosshairMovement();
   }
 	// Randomly generated level sprites.
   else {
@@ -347,15 +358,18 @@ void drawLvl(void) {
 		for (int i = 0; i < wallAm; i++) sprite_draw(&wall[i]);
 		for (int i = 0; i < treasureAm; i++) sprite_draw(&treasure[i]);
 		sprite_draw(&door); sprite_draw(&key);
-    sprite_draw(&shield); sprite_draw(&bow); sprite_draw(&bomb);
+    if (!shieldTrailed) sprite_draw(&shield);
+    if (!bowTrailed) sprite_draw(&bow);
+    if (!bombTrailed) sprite_draw(&bomb);
   }
 }
 
 
 // Enables sprites to trail sprites.
 void spriteTrail(Sprite sprite1) {
-  int x = hero.x - 3; int y = hero.y + HH * 1.5;
+  int x = hero.x - 3; int y = hero.y + HH + 3;
   sprite1.x = x; sprite1.y = y;
+  sprite_draw(&sprite1);
 }
 
 
@@ -458,7 +472,31 @@ void moveHero(void) {
 			enColl = true;
 		}
 	}
-	if (gapCollision(hero, key, 2)) {
+  if (gapCollision(hero, bomb, 1)) {
+    if (!bombTrailed) {
+      bombTrailed = true; shieldTrailed = false; bowTrailed = false;
+      send_str(PSTR("The hero has located da bomb.\r\n"));
+    }
+
+    spriteTrail(bomb);
+  }
+  if (gapCollision(hero, bow, 1)) {
+    if (!bowTrailed) {
+      bowTrailed = true; bombTrailed = false; shieldTrailed = false;
+      send_str(PSTR("The hero has collected the bow.\r\n"));
+    }
+    spriteTrail(bow);
+  }
+
+  if (gapCollision(hero, shield, 1)) {
+    if (!shieldTrailed) {
+      shieldTrailed = true; bombTrailed = false; bowTrailed = false;
+      send_str(PSTR("The hero has picked up a shield. +1 protection.\r\n"));
+    }
+    spriteTrail(shield);
+  }
+	if (gapCollision(hero, key, 1)) {
+    send_str(PSTR("The hero has retrieved the key.\r\n"));
 		keyColl = true;
     spriteTrailed = true;
 		key.x = 150;
@@ -474,21 +512,23 @@ void moveHero(void) {
 	}
 	// Checking for collisions.
 	if (enColl) {
-		destroyGame();
-		lives -= 1;
-		enColl = false;
+    if (shieldTrailed){
+      hero.y -= yy * 3;
+      hero.x -= xx * 3;
+      shieldTrailed = false;
+      send_str(PSTR("An enemy has destroyed the heros shield. -1 protection."));
+      shield.x = 1000;
+      shield.y = 1000;
+    }
+    else {
+      lives -= 1;
+      send_str(PSTR("An enemy has killed the hero.\r\n"));
+      // mapInitialised = false;
+      // destroyGame(); // ### FIX AFTER DEBUGGA
+    }
+
 	}
-  else if (gapCollision(hero, bow, 1)) {
-    // spriteTrail(bow);
-  }
-  else if (gapCollision(hero, bomb, 1)) {
-    // spriteTrail(bomb);
-  }
-  else if (gapCollision(hero, shield, 1)) {
-    hero.y -= yy;
-    hero.x -= xx;
-    // spriteTrail(shield);
-  }
+
 	else if (gapCollision(hero, door, 1)) {
 		if (keyColl) {
 			level += 1;
@@ -497,6 +537,7 @@ void moveHero(void) {
 			loadingScreen();
 		}
 		else {
+      send_str(PSTR("This seems to require a key.\r\n"));
 			hero.y -= yy;
 			hero.x -= xx;
 		}
@@ -509,7 +550,7 @@ void moveHero(void) {
 	}
 	scrollMap();
 	// Wall collision.
-	// staticMap();
+	staticMap();
   sprite_draw(&hero);
 }
 
@@ -544,20 +585,25 @@ void gameOverScreen(void) {
 	sprintf(scor, "final score: %d", score); draw_string(0, 20, scor, FG_COLOUR);
 	draw_string(0, 40, "SW2/3 to restart", FG_COLOUR);
 	show_screen(); //### Add button press to restart gameplay.
+  bool start = false;
+  do {
+    if (BIT_IS_SET(PINF, 6) || 	BIT_IS_SET(PINF, 5)) start = true;
+  } while (!start);
+  // setup(); ###
 }
 
 
 // Serial output for common game stats.
 void serialOutput(void) {
-  int x = hero.x; int y = hero.y;
-  char gameStatsT[60];
-  sprintf(gameStatsT, "~~~~~~~~~~~~~~~~~~~~~\r\n\r\n"
-  " Current run-time: %02d:%02d\r\n\r\n"
-  "			  		 Score: %d\r\n\r\n"
-  "		  			 Level: %d\r\n\r\n"
-  "	  	X,Y Location: %d,%d\r\n\r\n"
-  "  Remaining lives: %d", minutes, seconds, score, level, x, y, lives);
-  send_str(PSTR(gameStatsT, 60));
+  // int x = hero.x; int y = hero.y;
+  // char gameStatsT[100];
+  // // snprintf(gameStatsT, "~~~~~~~~~~~~~~~~~~~~~\r\n\r\n"
+  // // " Current run-time: %02d:%02d\r\n\r\n"
+  // // "			  		 Score: %d\r\n\r\n"
+  // // "		  			 Level: %d\r\n\r\n"s
+  // // "	  	X,Y Location: %d,%d\r\n\r\n"
+  // // "  Remaining lives: %d", minutes, seconds, score, level, x, y, lives);
+  // // send_str(gameStatsT);
 }
 
 
@@ -591,7 +637,6 @@ void initControls(void) {
 	CLEAR_BIT(DDRF, 5); // Right.
 }
 
-
 // Setup (ran on start).
 void setup(void) {
   set_clock_speed(CPU_8MHz);
@@ -606,38 +651,33 @@ void setup(void) {
   draw_string(0, 20, "serial terminal", FG_COLOUR);
   draw_string(0, 30, "to continue", FG_COLOUR);
   show_screen();
-	// while(!usb_configured());
-  // while(!(usb_serial_get_control() & USB_SERIAL_DTR))
-  // usb_serial_flush_input();
-
+	while(!usb_configured());
+  while(!(usb_serial_get_control() & USB_SERIAL_DTR))
+  usb_serial_flush_input();
   PORTD &= ~(1<<6);
   send_str(PSTR("Welcome to ANSI\r\n"));
   initControls();
-	welcomeScreen();
+	// welcomeScreen();
   clear_screen();
   drawLvl();
   sprite_draw(&hero);
   show_screen();
 }
 
-int clockTime = 0;
+
 // Process (ran every frame).
 void process(void) {
-  clockTime += 10;
 	if (lives > 0) {
 		clear_screen();
 		timer();
 		drawLvl();
+    if (bombTrailed || bowTrailed) crosshairMovement();
 		moveHero();
 		show_screen();
 	}
 	else {
 		gameOverScreen();
 	}
-  if (clockTime == 500) {
-    clockTime = 0;
-    serialOutput();
-  }
 }
 
 
