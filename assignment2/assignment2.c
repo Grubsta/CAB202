@@ -89,6 +89,9 @@ bool keyTrailed = false;
 bool crosshairInit = false;
 uint16_t closedCon = 0;
 uint16_t openCon = 0;
+// Shooting mechanism values.
+bool shot = false;
+int hx; int hy; int cx; int cy;
 
 // int wallX1 = -33, wallX2 = 117;
 // int wallY1 = -21, wallY2 = 69;
@@ -184,17 +187,17 @@ void enemyMovement() {
 }
 
 
-// Shooting mechanism values.
-bool shot = false;
-int hx; int hy; int cx; int cy;
-//
+// Shooting mechanism.
 void sendIt(void) {
   int sx = 0; int sy = 0;
+  int shotSpeed = 1;
+  // Change values whilst no user input.
   if (!shot) {
     hx = hero.x; hy = hero.y;
     crosshair.x = cx; crosshair.y = cy;
   }
   if (!crosshairInit) sprite_init(&crosshair, LCD_X * 0.5, LCD_Y * 0.5, 3, 3, crosshairBitmap);
+  // User input.
   if ((BIT_IS_SET(PINF, 6) || 	BIT_IS_SET(PINF, 5)) && shot == false) {
     send_str(PSTR("3\n"));
     shot = true;
@@ -213,6 +216,7 @@ void sendIt(void) {
       send_str(PSTR("Bombs away.\n"));
     }
   }
+  // ran if and while the projectile is functional.
   if (shot) {
     bool xHit = false;
     bool yHit = false;
@@ -224,12 +228,14 @@ void sendIt(void) {
       sx = bomb.x;
       sy = bomb.y;
     }
-    if (cx < sx) sx -= 2; // 2 being the shot's width.
-    else if (cx > sx) sx += 2;
+    if (cx < sx) sx -= shotSpeed;
+    else if (cx > sx) sx += shotSpeed;
     else xHit = true;
-    if (cy < sy) sy -= 2;
-    else if (cy > sy) sy += 2;
+    if (cy < sy) sy -= shotSpeed;
+    else if (cy > sy) sy += shotSpeed;
     else yHit = true;
+    arrow.x += sx; arrow.y += sy;
+    // The projectile has hit the target.
     if (xHit && yHit) {
       if (bowTrailed) {
         for (int i = 0; i < enemyAm; i++) {
@@ -241,9 +247,9 @@ void sendIt(void) {
         }
         spriteMagic(arrow);
       }
-      if (bowTrailed) {
+      if (bombTrailed) {
         for (int i = 0; i < enemyAm; i++) {
-          if (gapCollision(bomb, enemy[i], 2)) {
+          if (gapCollision(bomb, enemy[i], 3)) {
             spriteMagic(enemy[i]);
             score += 10;
             send_str(PSTR("An enemy has died in a horrific explosion.\n"));
@@ -251,9 +257,13 @@ void sendIt(void) {
         }
         spriteMagic(bomb);
       }
-      send_str(PSTR("The projectile has been destoyed.\n"));
+      send_str(PSTR("The projectile has been destoyed.\r\n"));
+      shot = false;
     }
-    sprite_draw(&bomb); sprite_draw(&bow);
+
+    send_str(PSTR("ass.\n"));
+    sprite_draw(&bomb);
+    sprite_draw(&bow);
     sprite_draw(&arrow);
   }
 }
@@ -554,28 +564,30 @@ void moveHero(void) {
 			enColl = true;
 		}
 	}
-  if (gapCollision(hero, bomb, 1)) {
-    if (!bombTrailed) {
-      bombTrailed = true; shieldTrailed = false; bowTrailed = false;
-      send_str(PSTR("The hero has located da bomb.\r\n"));
+  if (level > 1) {
+    if (gapCollision(hero, bomb, 1)) {
+      if (!bombTrailed) {
+        bombTrailed = true; shieldTrailed = false; bowTrailed = false;
+        send_str(PSTR("The hero has located da bomb.\r\n"));
+      }
+
+      spriteTrail(bomb);
+    }
+    if (gapCollision(hero, bow, 1)) {
+      if (!bowTrailed) {
+        bowTrailed = true; bombTrailed = false; shieldTrailed = false;
+        send_str(PSTR("The hero has collected the bow.\r\n"));
+      }
+      spriteTrail(bow);
     }
 
-    spriteTrail(bomb);
-  }
-  if (gapCollision(hero, bow, 1)) {
-    if (!bowTrailed) {
-      bowTrailed = true; bombTrailed = false; shieldTrailed = false;
-      send_str(PSTR("The hero has collected the bow.\r\n"));
+    if (gapCollision(hero, shield, 1)) {
+      if (!shieldTrailed) {
+        shieldTrailed = true; bombTrailed = false; bowTrailed = false;
+        send_str(PSTR("The hero has picked up a shield. +1 protection.\r\n"));
+      }
+      spriteTrail(shield);
     }
-    spriteTrail(bow);
-  }
-
-  if (gapCollision(hero, shield, 1)) {
-    if (!shieldTrailed) {
-      shieldTrailed = true; bombTrailed = false; bowTrailed = false;
-      send_str(PSTR("The hero has picked up a shield. +1 protection.\r\n"));
-    }
-    spriteTrail(shield);
   }
 	if (gapCollision(hero, key, 1)) {
     send_str(PSTR("The hero has retrieved the key.\r\n"));
@@ -608,9 +620,7 @@ void moveHero(void) {
       // mapInitialised = false;
       // destroyGame(); // ### FIX AFTER DEBUGGA
     }
-
 	}
-
 	else if (gapCollision(hero, door, 1)) {
 		if (keyColl) {
 			level += 1;
@@ -624,14 +634,12 @@ void moveHero(void) {
 			hero.x -= xx;
 		}
 	}
-
 	// If no collisions occur, move hero.
 	else {
 		hero.y += dy;
 		hero.x += dx;
 	}
 	scrollMap();
-	// Wall collision.
 	staticMap();
   sprite_draw(&hero);
 }
