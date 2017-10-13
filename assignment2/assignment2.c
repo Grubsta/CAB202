@@ -66,7 +66,7 @@ int timeCounter = 0;
 // Sprite amounts.
 int enemyAm = 0;
 int treasureAm = 0;
-int wallAm;
+int wallAm = 6;
 // Gameplay / Collisions.
 int XYarray[50];
 int screenX = 0;
@@ -93,10 +93,8 @@ uint16_t openCon = 0;
 bool shot = false;
 int hx; int hy; int cx; int cy;
 
-// int wallX1 = -33, wallX2 = 117;
-// int wallY1 = -21, wallY2 = 69;
-int wallX1 = -10, wallX2 = 94;
-int wallY1 = -10, wallY2 = 58;
+int wallX1 = -33, wallX2 = 117;
+int wallY1 = -21, wallY2 = 69;
 
 // Initialise sprites.
 Sprite hero; Sprite tower; Sprite door; Sprite key;
@@ -339,7 +337,6 @@ void scrollMap(void) {
 
 // Initialises set amount of walls.
 void wallInit(void) {
-	wallAm = 6;
 	int x, y;
 	int drawnWall = 0;
 	bool valid = true;
@@ -349,7 +346,7 @@ void wallInit(void) {
       x += wallX1;
 			y = rand() % wallY2 + (wallY1 * 1) - 12;
       y += wallY1;
-			int direction = rand() % 1;
+			int direction = rand() % 2;
 			if (direction == 1) { // Vertical direction.
 				sprite_init(&wall[i], x, y, VWW, VWH, vertWallBitmap);
 			} else { // Horizontal direction.
@@ -357,7 +354,7 @@ void wallInit(void) {
 			}
 			if (drawnWall > 0) {
 				for (int a = 0; a < drawnWall; a++) { // 5-1 and make the fifth start at the same x1y1 as another
-					if (gapCollision(wall[i], wall[a], 15)) valid = false; // ### NEED to compensate for wall gaps.
+					if (gapCollision(wall[i], wall[a], 7)) valid = false; // ### NEED to compensate for wall gaps.
 					else valid = true;
 				}
 			}
