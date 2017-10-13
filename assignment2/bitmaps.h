@@ -2,6 +2,7 @@
 #include <sprite.h>
 
 // Bitmaps. (L x W || Row x Column)
+// 16 x 8
 uint8_t heroBitmap[] = {
   0b00000011, 0b11000000,
 	0b00000110, 0b01100000,
@@ -116,6 +117,10 @@ uint8_t bowBitmap[] = {
   0b00111100,
   0b01100110,
   0b11000011,
+};
+// 1 x 1
+uint8_t arrowBitmap[] = {
+  0b1000000,
 };
 // 8 x 4
 uint8_t shieldBitmap[] = {
