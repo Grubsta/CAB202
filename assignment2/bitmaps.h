@@ -118,9 +118,10 @@ uint8_t bowBitmap[] = {
   0b01100110,
   0b11000011,
 };
-// 1 x 1
+// 2 x 2
 uint8_t arrowBitmap[] = {
-  0b1000000,
+  0b1100000,
+  0b1100000,
 };
 // 8 x 4
 uint8_t shieldBitmap[] = {
