@@ -32,9 +32,9 @@
 #define KW 8
 #define VWH 44 // Vetical wall.
 #define VWW 3
-#define HWH 3 // horizontal wall.
+#define HWH 3 // Horizontal wall.
 #define HWW 44
-
+// Threshold for button presses.
 #define thresh (1000)
 
 
@@ -56,7 +56,7 @@ double dx = 0;
 double dy = 0;
 int dxdy[1];
 // Player.
-int level = 1;
+int level = 2;
 int lives = 3;
 int score = 0;
 // Timer.
@@ -64,13 +64,13 @@ int seconds = 0;
 int minutes = 0;
 int timeCounter = 0;
 // Sprite amounts.
-int enemyAm = 1;
-int treasureAm = 5;
+int enemyAm = 0;
+int treasureAm = 0;
 int wallAm;
 // Gameplay / Collisions.
 int XYarray[50];
-int screenHeight = 48;
-int screenWidth = 84;
+int screenX = 0;
+int screenY = 0;
 bool keyColl = false;
 bool activated = false;
 bool lvlInit = false;
@@ -86,6 +86,7 @@ bool bowTrailed = false;
 bool bombTrailed = false;
 bool shieldTrailed = false;
 bool keyTrailed = false;
+bool crosshairInit = false;
 uint16_t closedCon = 0;
 uint16_t openCon = 0;
 
@@ -98,6 +99,7 @@ int wallY1 = -10, wallY2 = 58;
 Sprite hero; Sprite tower; Sprite door; Sprite key;
 Sprite enemy[5]; Sprite treasure[5]; Sprite wall[5];
 Sprite shield; Sprite bow; Sprite bomb; Sprite crosshair;
+Sprite arrow;
 
 // Terminal output strings
  char *heroDeathT = ("An enemy has killed the hero.");
@@ -111,8 +113,6 @@ Sprite shield; Sprite bow; Sprite bomb; Sprite crosshair;
  char *bowUsedT = ("The hero has shot the bow.");
  char *bombUsedT = ("The hero has detonated the bomb.");
 
- // void setup_usb_serial( void );
- // void usb_serial_send(char * message);
 
 // Initialise hero.
 void initHero(void) {
@@ -121,46 +121,31 @@ void initHero(void) {
 	sprite_init(&hero, x, y, HW, HH, heroBitmap);
 }
 
+
+// Causes the sprites to magically dissapear
+void spriteMagic(Sprite sprite) {
+  sprite.x = -0;
+  sprite.y = -1000;
+}
+
+
 // Colisions for static map edges. ### FIX
 void staticMap(void) {
   int x = round(hero.x); int y = round(hero.y);
   if (x < 0 || x + HW >= LCD_X - 1) hero.x -= dx;
   if (y < 0 || y + HH >= LCD_Y - 1) hero.y -= dy;
-
 }
 
+
 // Sends inputted string via serial connection.
-void send_str(const char *s)
+void send_str(const char *string)
 {
 	char c;
 	while (1) {
-		c = pgm_read_byte(s++);
+		c = pgm_read_byte(string++);
 		if (!c) break;
 		usb_serial_putchar(c);
 	}
-}
-
-
-// Moves enemy sprite towards hero's location.
-void enemyMovement() {
-	float enemySpeed = 0.1;
-	for (int i = 0; i < enemyAm; i++) {
-		if (enemy[i].x < hero.x) enemy[i].x += enemySpeed;
-		else if (enemy[i].x > hero.x) enemy[i].x -= enemySpeed;
-		if (enemy[i].y < hero.y) enemy[i].y += enemySpeed;
-		else if (enemy[i].y > hero.y) enemy[i].y -= enemySpeed;
-		sprite_draw(&enemy[i]);
-	}
-}
-
-
-// Moves crosshair dependent on petentiometer input.
-void crosshairMovement(void) {
-  int left_adc = adc_read(0);
-  int right_adc = adc_read(1);
-  crosshair.x = (double) left_adc * (LCD_X - crosshair.width) / 1024;
-  crosshair.y = (double) right_adc * (LCD_Y - crosshair.height) / 1024;
-  sprite_draw(&crosshair);
 }
 
 
@@ -186,6 +171,105 @@ bool gapCollision(Sprite sprite1, Sprite sprite2, int gap) {
 }
 
 
+// Moves enemy sprite towards hero's location.
+void enemyMovement() {
+	float enemySpeed = 0.1;
+	for (int i = 0; i < enemyAm; i++) {
+		if (enemy[i].x < hero.x) enemy[i].x += enemySpeed;
+		else if (enemy[i].x > hero.x) enemy[i].x -= enemySpeed;
+		if (enemy[i].y < hero.y) enemy[i].y += enemySpeed;
+		else if (enemy[i].y > hero.y) enemy[i].y -= enemySpeed;
+		sprite_draw(&enemy[i]);
+	}
+}
+
+
+// Shooting mechanism values.
+bool shot = false;
+int hx; int hy; int cx; int cy;
+//
+void sendIt(void) {
+  int sx = 0; int sy = 0;
+  if (!shot) {
+    hx = hero.x; hy = hero.y;
+    crosshair.x = cx; crosshair.y = cy;
+  }
+  if (!crosshairInit) sprite_init(&crosshair, LCD_X * 0.5, LCD_Y * 0.5, 3, 3, crosshairBitmap);
+  if ((BIT_IS_SET(PINF, 6) || 	BIT_IS_SET(PINF, 5)) && shot == false) {
+    send_str(PSTR("3\n"));
+    shot = true;
+    if (cx < hx) sx = hx - 5 - 2; // 2 being the shot's width.
+    else if (cx > hx) sx = hx + HW + 5;
+    if (cy < hy) sy = hy - 5;
+    else if (cy > hy) sy = hy + HW + 5;
+    if (bowTrailed) {
+      sprite_init(&arrow, sx, sy, 2, 2, arrowBitmap);
+      sprite_draw(&arrow);
+      send_str(PSTR("The arrow has left the building.\n"));
+    }
+    else {
+      sprite_init(&bomb, sx, sy, 2, 2, arrowBitmap);
+      sprite_draw(&bomb);
+      send_str(PSTR("Bombs away.\n"));
+    }
+  }
+  if (shot) {
+    bool xHit = false;
+    bool yHit = false;
+    if (bowTrailed) {
+      sx = arrow.x;
+      sy = arrow.y;
+    }
+    else {
+      sx = bomb.x;
+      sy = bomb.y;
+    }
+    if (cx < sx) sx -= 2; // 2 being the shot's width.
+    else if (cx > sx) sx += 2;
+    else xHit = true;
+    if (cy < sy) sy -= 2;
+    else if (cy > sy) sy += 2;
+    else yHit = true;
+    if (xHit && yHit) {
+      if (bowTrailed) {
+        for (int i = 0; i < enemyAm; i++) {
+          if (gapCollision(arrow, enemy[i], 1)) {
+            spriteMagic(enemy[i]);
+            score += 10;
+            send_str(PSTR("An enemy has been shot till death by the hero.\n"));
+          }
+        }
+        spriteMagic(arrow);
+      }
+      if (bowTrailed) {
+        for (int i = 0; i < enemyAm; i++) {
+          if (gapCollision(bomb, enemy[i], 2)) {
+            spriteMagic(enemy[i]);
+            score += 10;
+            send_str(PSTR("An enemy has died in a horrific explosion.\n"));
+          }
+        }
+        spriteMagic(bomb);
+      }
+      send_str(PSTR("The projectile has been destoyed.\n"));
+    }
+    sprite_draw(&bomb); sprite_draw(&bow);
+    sprite_draw(&arrow);
+  }
+}
+
+
+// Moves crosshair dependent on petentiometer input.
+void crosshairMovement(void) {
+  int left_adc = adc_read(0);
+  int right_adc = adc_read(1);
+  crosshair.x = (double) left_adc * (LCD_X - crosshair.width) / 1024;
+  crosshair.y = (double) right_adc * (LCD_Y - crosshair.height) / 1024;
+  sprite_draw(&crosshair);
+  sendIt();
+}
+
+
 // Initialises all sprites on first level.
 void level1Init(void) {
 	int midX = LCD_X / 2;
@@ -196,7 +280,7 @@ void level1Init(void) {
 	sprite_init(&enemy[0], LCD_X * 0.85, LCD_Y * 0.50, EW, EH, enemyBitmap);
 	sprite_init(&key, LCD_X * 0.15 - KW, LCD_Y * 0.50, KW, KH, keyBitmap);
  	sprite_init(&door, midX - DW / 2, TH - DH, DW, DH, doorBitmap);
-  // sprite_init(&crosshair, LCD_X * 0.5, LCD_Y * 0.5, 3, 3, crosshairBitmap); //### TEMP
+  //  //### TEMP
 	lvlInit = true;
 }
 
@@ -227,14 +311,12 @@ void moveAll(int x, int y) {
 	hero.x += x; hero.y += y;
 }
 
-int screenX = 0;
-int screenY = 0;
 
 // Scrolling map feature.
 void scrollMap(void) {
 	int x = 0;
 	int y = 0;
-	if (hero.x < round(LCD_X * 0.15) && hero.x > wallX1 && hero.x < wallX2) x += 1;
+	if (hero.x < round(LCD_X * 0.15) && hero.x > wallX1 && hero.x < wallX2) x += 1; // ### fix the && of all of these
 	else if (hero.x + HW > round(LCD_X * 0.85) && hero.x > -33 && hero.x < wallX2) x -= 1;
 	if (hero.y < round(LCD_Y * 0.15) && hero.y > wallY1 && hero.y < wallY2) y += 1;
 	else if (hero.y + HH > round(LCD_Y * 0.85) && hero.y > wallY1 && hero.y < wallY2) y -= 1;
@@ -333,7 +415,7 @@ void mapInit(void) {
 	sprite_init(&door, XYarray[8], XYarray[43], DW, DH, doorBitmap);
 	sprite_init(&key, XYarray[2], XYarray[33], KW, KH, keyBitmap);
   // treasureInit();
-	// wallInit();
+	wallInit();
 	initHero();
   defenceInit();
 	enemyInit();
@@ -376,15 +458,15 @@ void spriteTrail(Sprite sprite1) {
 // Destroys entire level. ###
 void destroyGame(void) {
 	if (level == 1) {
-		free(&tower); free(&enemy[0]);
+		spriteMagic(tower); spriteMagic(enemy[0]);
 	}
 	else {
-		for (int i = 0; i < wallAm; i++) free(&wall[i]);
+		for (int i = 0; i < wallAm; i++) spriteMagic(wall[i]);
 	}
-	for (int i = 0; i < enemyAm; i++) free(&enemy[i]);
-  for (int i = 0; i < treasureAm; i++) free(&treasure[i]);
-	free(&hero); free(&key); free(&door);
-  free(&bow); free(&bomb); free(&shield);
+	for (int i = 0; i < enemyAm; i++) spriteMagic(enemy[i]);
+  for (int i = 0; i < treasureAm; i++) spriteMagic(treasure[i]);
+	spriteMagic(hero); spriteMagic(key); spriteMagic(door);
+  spriteMagic(bow); spriteMagic(bomb); spriteMagic(shield);
 	mapInitialised = false; lvlInit = false; keyColl = false;
   keySpawn = false; bombSpawn = false; shieldSpawn = false;
   spriteTrailed = false; bowTrailed = false; bombTrailed = false;
