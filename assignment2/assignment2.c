@@ -71,7 +71,7 @@ int timeCounter = 0;
 // Sprite amounts.
 int enemyAm = 0;
 int treasureAm = 0;
-int wallAm = 6;
+int wallAm = 2;
 // Gameplay / Collisions.
 int XYarray[50];
 int screenX = 0;
@@ -100,14 +100,14 @@ int hx; int hy; int cx; int cy;
 // Seed generator.
 int seed = 2313;
 // Linked list for wall positions.
-// struct node *end=NULL;
-// typedef struct node {
-//     int val;
-//     struct node * next;
-// } node_t;
-//
-// node_t * wallXCoords = NULL;
-// node_t * wallYCoords = NULL;
+struct node *end=NULL;
+typedef struct node {
+    int val;
+    struct node * next;
+} node_t;
+
+node_t * wallXCoords = NULL;
+node_t * wallYCoords = NULL;
 
 int wallX1 = -33, wallX2 = 117;
 int wallY1 = -21, wallY2 = 69;
@@ -383,139 +383,153 @@ void scrollMap(void) {
   if (screenY <= -21 || screenY >= 21) y = 0;
 	moveAll(x, y);
 }
-// char hello[22];
-// sprintf(hello, "Hello USB!!!! LEVEL:%d", level);
-// usb_serial_send( hello );
+
+char printArray[20];
 
 // Debatable wall generator.
-// bool wallShiz(Sprite sprite1, int i, int gap) {
-//   // for (int i = 0; i <= sizeof(wallXCoords); i++) {
-//   // printf("%s\n", );
-//   char Xarray[] PROGMEM = "wallXCoords";
-//   for (int i = 0; i <= sizeof(wallXCoords); i++) {
-//     USART_TxString_P(Xarray[i]);
-//   }
-//   // const char Yarray[]  = {wallYCoords};
-//
-//   send_str(PSTR("WAAAAAAAAAAALLSHIIIIZ\r\n"));
-// 	for (int a = sprite1.x - gap; a < sprite1.x + sprite1.width + gap; a++) {
-// 		for (int i = 0; i <= sizeof(wallXCoords); i++) {
-//       // send_str(PSTR("TESTING XX\r\n"));
-// 			if (a == wallXCoords->val) {
-//         send_str(PSTR("X COLL\r\n"));
-//         for (int a = sprite1.y - gap; a < sprite1.y + sprite1.height + gap; a++) {
-//           // send_str(PSTR("TESTING YYY\r\n"));
-//           for (int i = 0; i <= sizeof(wallYCoords); i++) {
-//             if (a == wallYCoords->val) {
-//               send_str(PSTR("X & Y COLL MATE\r\n"));
-//               return true;
-//             } wallYCoords = wallYCoords->next;
-//           }
-//         }
-//       }
-//       // send_str(PSTR("LEZ GO NEXT\r\n"));
-//       wallXCoords = wallXCoords->next;
-//     }
-// 	}
-//   send_str(PSTR("TWAAAAAAAAAAAAAT\r\n"));
-//   for (int a = sprite1.x - gap; a < sprite1.x + sprite1.width + gap; a++) {
-//     insertatend(a);
-//   //   wallXCoords->next->val = a;
-//   //   wallXCoords->next = NULL;
-//   }
-//   for (int a = sprite1.y - gap; a < sprite1.y + sprite1.height + gap; a++) {
-//     insertatend(a);
-//   //   wallYCoords->next->val = a;
-//   //   wallYCoords->next = NULL;
-//   }
-//   send_str(PSTR("NO COLLISION MATE\r\n"));
-// 	return false;
-// }
-//
-//
-// void wallInit(void) {
-//     send_str(PSTR("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n"));
-//   wallAm = 2;
-// 	int x, y;
-// 	// int drawnWall = 0;
-//   int gap = 5;
-// 	bool valid = true;
-// 	for (int i = 0; i < wallAm; i++) {
-// 		do {
-//       send_str(PSTR("1\r\n"));
-// 			x = rand() % wallX2 + (wallX1 * 1);
-//       x += wallX1;
-// 			y = rand() % wallY2 + (wallY1 * 1);
-//       y += wallY1;
-// 			int direction = rand() % 10;
-// 			if (direction >= 5) { // Vertical direction.
-//         send_str(PSTR("VERT.\r\n"));
-// 				sprite_init(&wall[i], x, y, VWW, VWH, vertWallBitmap);
-// 				if (wallShiz(wall[i], i, gap)) valid = false;
-// 			} else { // Horizontal direction.
-//         send_str(PSTR("NOT VERT.\r\n"));
-// 				sprite_init(&wall[i], x, y, HWW, HWH, horWallBitmap);
-// 				if (wallShiz(wall[i], i, gap)) valid = false;
-// 			}
-// 		} while (!valid);
-//     send_str(PSTR("ACCCCCCCCCCCCCTTTTTTTTTTTTUALLLY WORKED WHAT\r\n"));
-// 	}
-//   send_str(PSTR("ASSS\r\n"));
-//   for (int i = 0; i < wallAm; i++) {
-//     sprite_draw(&wall[i]);
-//   }
-// 	wallInitialised = true;
-// }
+bool wallShiz(Sprite sprite1, int i, int gap) {
+	for (int a = sprite1.x - gap; a < sprite1.x + sprite1.width + gap; a++) {
+		for (int i = 0; i <= sizeof(wallXCoords); i++) {
+      // send_str(PSTR("TESTING XX\r\n"));
+			if (a == wallXCoords->val) {
+        send_str(PSTR("X COLL\r\n"));
+        for (int a = sprite1.y - gap; a < sprite1.y + sprite1.height + gap; a++) {
+          // send_str(PSTR("TESTING YYY\r\n"));
+          for (int i = 0; i <= sizeof(wallYCoords); i++) {
+            if (a == wallYCoords->val) {
+              send_str(PSTR("X & Y COLL MATE\r\n"));
+              return true;
+            } wallYCoords = wallYCoords->next;
+          }
+        }
+      }
+      // send_str(PSTR("LEZ GO NEXT\r\n"));
+      wallXCoords = wallXCoords->next;
+    }
+	}
+  send_str(PSTR("APPENDING\r\n"));
+  for (int a = sprite1.x - gap; a < sprite1.x + sprite1.width + gap; a++) {
+    // insertatend(a);
+    wallXCoords->next->val = a;
+    wallXCoords->next = NULL;
+  }
+  for (int a = sprite1.y - gap; a < sprite1.y + sprite1.height + gap; a++) {
+    // insertatend(a);
+    wallYCoords->next->val = a;
+    wallYCoords->next = NULL;
+  }
+  send_str(PSTR("NO COLLISION MATE\r\n"));
+  for (int i = 0; i <= sizeof(wallXCoords); i++) {
+    int a = wallXCoords->val;
+    sprintf(printArray, "X - value[%d]: %d\r\n", i, a);
+    usb_serial_send(printArray);
+    wallXCoords = wallXCoords->next;
+  }
+  for (int i = 0; i <= sizeof(wallYCoords); i++) {
+    int a = wallYCoords->val;
+    sprintf(printArray, "Y - value[%d]: %d\r\n", i, a);
+    usb_serial_send(printArray);
+    wallYCoords = wallYCoords->next;
+  }
+	return false;
+}
 
-int wallArray[6][4];
-// Wall generator.
+
 void wallInit(void) {
-  char printArray[30];
-	int x, y;
-	uint8_t drawnWall = 0;
+  send_str(PSTR("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n"));
+  sprintf(printArray, "WALL AMOUNT = %d\r\n", wallAm);
+  usb_serial_send(printArray);
   wallAm = 2;
-  // int gap = 5;
+	int x, y;
+	// int drawnWall = 0;
+  int gap = 5;
 	bool valid = true;
 	for (int i = 0; i < wallAm; i++) {
 		do {
-      for (int i = 0; i <= drawnWall; i++) {
-        sprintf(printArray, "wall: %d, x1: %d, y1: %d, x2: %d, y2: %d \r\n", drawnWall, wallArray[i][0], wallArray[i][1],
-        wallArray[i][2], wallArray[i][3]);
-        usb_serial_send( printArray );
-      }
-      // srand(wallAm * minutes - gap * 23 - seconds);
-			x = rand() % wallX2 + (wallX1 + 8 * 1);
+      sprintf(printArray, "ATTEMPTING WALL no. = %d\r\n", i);
+      usb_serial_send(printArray);
+			x = rand() % wallX2 + (wallX1 * 1);
       x += wallX1;
 			y = rand() % wallY2 + (wallY1 * 1);
       y += wallY1;
 			int direction = rand() % 10;
-			if (direction <= 4) { // Vertical direction.
+			if (direction >= 5) { // Vertical direction.
+        send_str(PSTR("VERT.\r\n"));
 				sprite_init(&wall[i], x, y, VWW, VWH, vertWallBitmap);
+				if (wallShiz(wall[i], i, gap)) valid = false;
 			} else { // Horizontal direction.
+        send_str(PSTR("NOT VERT.\r\n"));
 				sprite_init(&wall[i], x, y, HWW, HWH, horWallBitmap);
-			}
-			if (drawnWall > 0) {
-        send_str(PSTR("WAAAAAAAAAAALLSHIIIIZ\r\n"));
-        for (int a = 0; a <= drawnWall; a++) {
-          if (wallArray[a][0] == wall[i].x) valid = false;
-          if (wallArray[a][1] == wall[i].y) valid = false;
-          if (wallArray[a][2] == wall[i].x + wall[i].width) valid = false;
-          if (wallArray[a][3] == wall[i].y + wall[i].height) valid = false;
-          // if (gapCollision(wall[i], wall[a], 7)) valid = false;
-        }
+				if (wallShiz(wall[i], i, gap)) valid = false;
 			}
 		} while (!valid);
-    send_str(PSTR("we made it sun\r\n"));
-    wallArray[i][0] = wall[i].x;
-    wallArray[i][1] = wall[i].y;
-    wallArray[i][2] = wall[i].x + wall[i].width;
-    wallArray[i][3] = wall[i].y + wall[i].height;
-
-		sprite_draw(&wall[i]);
-		drawnWall += 1;
+    send_str(PSTR("ACCCCCCCCCCCCCTTTTTTTTTTTTUALLLY WORKED WHAT\r\n"));
 	}
+  send_str(PSTR("FINISHED INITIALISING WALLS - TIME to DRAW\r\n"));
+  for (int i = 0; i < wallAm; i++) {
+    sprite_draw(&wall[i]);
+  }
+  send_str(PSTR("DRAWN\r\n"));
 	wallInitialised = true;
 }
+
+// int wallArray[6][4];
+// // Wall generator.
+// void wallInit(void) {
+//   char printArray[30];
+// 	int x, y;
+// 	int drawnWall = 0;
+//   // wallAm = 2;
+//   // int gap = 5;
+// 	bool valid = true;
+// 	for (int i = 0; i < wallAm; i++) {
+// 		do {
+//       for (int i = 0; i <= drawnWall; i++) {
+//         // sprintf(printArray, "wall: %d, x1: %d, y1: %d, x2: %d, y2: %d \r\n", drawnWall, wallArray[i][0], wallArray[i][1],
+//         // wallArray[i][2], wallArray[i][3]);
+//         // usb_serial_send(printArray);
+//       }
+//       // srand(wallAm * minutes - gap * 23 - seconds);
+// 			x = rand() % wallX2 + (wallX1 + 8 * 1) + (wallAm * wallAm);
+//       x += wallX1;
+// 			y = rand() % wallY2 + (wallY1 * 1) + (wallAm * wallAm);
+//       y += wallY1;
+//       sprintf(printArray, "wall: %d, x1: %d, y1: %d~~~~~~~~~~~~~~~~~~~~\r\n", drawnWall, x, y);
+//       usb_serial_send(printArray);
+//
+// 			int direction = rand() % 10;
+// 			if (direction <= 4) { // Vertical direction.
+// 				sprite_init(&wall[i], x, y, VWW, VWH, vertWallBitmap);
+// 			} else { // Horizontal direction.
+// 				sprite_init(&wall[i], x, y, HWW, HWH, horWallBitmap);
+// 			}
+// 			if (drawnWall > 0) {
+//         send_str(PSTR("WAAAAAAAAAAALLSHIIIIZ\r\n"));
+//         for (int a = 0; a < drawnWall; a++) {
+//           if (wallArray[a][0] == wall[i].x) valid = false;
+//           if (wallArray[a][1] == wall[i].y) valid = false;
+//           if (wallArray[a][2] == wall[i].x + wall[i].width) valid = false;
+//           if (wallArray[a][3] == wall[i].y + wall[i].height) valid = false;
+//           // if (gapCollision(wall[i], wall[a], 7)) valid = false;
+//           for (int i = 0; i <= drawnWall; i++) {
+//             sprintf(printArray, "wall: %d, x1: %d, y1: %d, x2: %d, y2: %d \r\n", drawnWall, wallArray[i][0], wallArray[i][1],
+//             wallArray[i][2], wallArray[i][3]);
+//             usb_serial_send(printArray);
+//           }
+//         }
+// 			}
+// 		} while (!valid);
+//     send_str(PSTR("we made it sun\r\n"));
+//     wallArray[i][0] = wall[i].x;
+//     wallArray[i][1] = wall[i].y;
+//     wallArray[i][2] = wall[i].x + wall[i].width;
+//     wallArray[i][3] = wall[i].y + wall[i].height;
+//
+// 		sprite_draw(&wall[i]);
+// 		drawnWall += 1;
+// 	}
+// 	wallInitialised = true;
+// }
 
 // Initialises defence items.
 void defenceInit(void) {
@@ -563,6 +577,8 @@ void enemyInit(void) { ///### inits broken, fix later
   enemyAm = rand() % 6;
   for (int i = 0; i < enemyAm; i++) {
     bool valid = false;
+    sprintf(printArray, "ENEMY no. = %d\r\n", i);
+    usb_serial_send(printArray);
     while (!valid) {
       x = rand() % (wallX2 + (wallX1 + 8 * 1)); y = rand() % (wallY2 + (wallY1 * 1));
       x += wallX1; y += wallY1;
@@ -581,6 +597,8 @@ void treasureInit(void) { ///### inits broken, fix later
   for (int i = 0; i < treasureAm; i++) {
     bool valid = false;
     while (!valid) {
+      sprintf(printArray, "TREASURE no. = %d\r\n", i);
+      usb_serial_send(printArray);
       x = rand() % (wallX2 + (wallX1 + 8 * 1)); y = rand() % (wallY2 + (wallY1 * 1));
       x += wallX1; y += wallY1;
       sprite_init(&treasure[i], x, y, 8, 3, treasureBitmap);
@@ -597,16 +615,17 @@ void mapInit(void) {
 	}
 	sprite_init(&door, XYarray[8], XYarray[43], DW, DH, doorBitmap);
 	sprite_init(&key, XYarray[2], XYarray[33], KW, KH, keyBitmap);
-  // send_str(PSTR("TREASURE\r\n"));
-  treasureInit();
-  // send_str(PSTR("ENEMY\r\n"));
-  enemyInit();
   send_str(PSTR("WALL\r\n"));
 	wallInit();
+  send_str(PSTR("HERO\r\n"));
 	initHero();
-  // send_str(PSTR("DEFENCE\r\n"));
+  send_str(PSTR("TREASURE\r\n"));
+  treasureInit();
+  send_str(PSTR("ENEMY\r\n"));
+  enemyInit();
+  send_str(PSTR("DEFENCE\r\n"));
   defenceInit();
-  // send_str(PSTR("TREASURE\r\n"));
+  send_str(PSTR("MAP is INITIALISED\r\n"));
 	mapInitialised = true;
 }
 
