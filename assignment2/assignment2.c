@@ -73,7 +73,11 @@ int enemyAm = 0;
 int treasureAm = 0;
 int wallAm = 2;
 // Gameplay / Collisions.
-int XYarray[50];
+int herox;
+int heroy;
+int keyx;
+int keyy;
+// int XYarray[50];
 int screenX = 0;
 int screenY = 0;
 bool keyColl = false;
@@ -97,6 +101,8 @@ uint16_t openCon = 0;
 // Shooting mechanism values.
 bool shot = false;
 int hx; int hy; int cx; int cy;
+// String output.
+char printArray[20];
 // Seed generator.
 int seed = 2313;
 // Linked list for wall positions.
@@ -118,23 +124,12 @@ Sprite enemy[5]; Sprite treasure[5]; Sprite wall[5];
 Sprite shield; Sprite bow; Sprite bomb; Sprite crosshair;
 Sprite arrow;
 
-// Terminal output strings
- char *heroDeathT = ("An enemy has killed the hero.");
- char *enemyDeathT = ("An enemy has been shot till death by the hero.");
- char *sheildCollT = ("The hero has picked up a shield. +1 protection.");
- char *keyCollT = ("The hero has retrieved the key.");
- char *bowCollT = ("The hero has collected the bow.");
- char *bombCollT = ("The hero has located da bomb.");
- char *shieldUsedT = ("An enemy has destroyed the heros shield. -1 protection.");
- // char *keyUsedT = ("The player has unlocked the door with the key.\nCongratulations on finishing floor {0}.", level);
- char *bowUsedT = ("The hero has shot the bow.");
- char *bombUsedT = ("The hero has detonated the bomb.");
-
 
 // Initialise hero.
 void initHero(void) {
 	int x = LCD_X / 2 - HW / 2;
 	int y = LCD_Y / 2 + HH + 3;
+  herox = x; heroy = y;
 	sprite_init(&hero, x, y, HW, HH, heroBitmap);
 }
 
@@ -146,13 +141,12 @@ void spriteMagic(Sprite sprite) {
 }
 
 
-// Colisions for static map edges. ### FIX
+// Colisions for static map edges.
 void staticMap(void) {
   int x = round(hero.x); int y = round(hero.y);
   if (x < 0 || x + HW >= LCD_X - 1) hero.x -= dx;
   if (y < 0 || y + HH >= LCD_Y - 1) hero.y -= dy;
 }
-
 
 // Sends inputted string via serial connection.
 void send_str(const char *string)
@@ -172,7 +166,7 @@ void usb_serial_send(char * message) {
 }
 
 
-// Collision detection between 2 sprites.
+// Collision detection between 2 sprites + gap if needed.
 bool gapCollision(Sprite sprite1, Sprite sprite2, int gap) {
   // Sprite 1.
   int spr1Bottom = sprite1.x + sprite1.height + gap;
@@ -184,6 +178,9 @@ bool gapCollision(Sprite sprite1, Sprite sprite2, int gap) {
   int spr2Top = sprite2.y - gap;
   int spr2Left = sprite2.x - gap;
   int spr2Right = sprite2.x + sprite2.width + gap;
+  sprintf(printArray, "S2: B = %d, T = %d\r\n", spr2Bottom, spr2Top);
+  usb_serial_send(printArray);
+
   // Creates a perimter arround sprites and checks for collision.
 	if (spr1Bottom < spr2Top || spr1Top > spr2Bottom || spr1Right < spr2Left|| spr1Left > spr2Right) {
 		return false;
@@ -218,6 +215,7 @@ bool spriteCollision(Sprite sprite) {
   send_str(PSTR("passed key\r\n"));
   if (gapCollision(sprite, door, 0)) return true;
   send_str(PSTR("passed door\r\n"));
+  send_str(PSTR("PASSED COLLISIONS\r\n"));
   return false;
 
 }
@@ -227,10 +225,12 @@ bool spriteCollision(Sprite sprite) {
 void enemyMovement() {
 	float enemySpeed = 0.1;
 	for (int i = 0; i < enemyAm; i++) {
-		if (enemy[i].x < hero.x) enemy[i].x += enemySpeed;
-		else if (enemy[i].x > hero.x) enemy[i].x -= enemySpeed;
-		if (enemy[i].y < hero.y) enemy[i].y += enemySpeed;
-		else if (enemy[i].y > hero.y) enemy[i].y -= enemySpeed;
+    if ((enemy[i].x > LCD_X - 84 || enemy[i].x > LCD_X) && (enemy[i].y > LCD_Y - 44 || enemy[i].y < LCD_Y)){
+      if (enemy[i].x < hero.x) enemy[i].x += enemySpeed;
+      else if (enemy[i].x > hero.x) enemy[i].x -= enemySpeed;
+      if (enemy[i].y < hero.y) enemy[i].y += enemySpeed;
+      else if (enemy[i].y > hero.y) enemy[i].y -= enemySpeed;
+    }
 		sprite_draw(&enemy[i]);
 	}
 }
@@ -309,7 +309,6 @@ void sendIt(void) {
       send_str(PSTR("The projectile has been destoyed.\r\n"));
       shot = false;
     }
-
     send_str(PSTR("ass.\n"));
     sprite_draw(&bomb);
     sprite_draw(&bow);
@@ -374,47 +373,45 @@ void moveAll(int x, int y) {
 void scrollMap(void) {
 	int x = 0;
 	int y = 0;
-	if (hero.x < round(LCD_X * 0.15) && hero.x > wallX1 && hero.x < wallX2) x += 1; // ### fix the && of all of these
-	else if (hero.x + HW > round(LCD_X * 0.85) && hero.x > -33 && hero.x < wallX2) x -= 1;
-	if (hero.y < round(LCD_Y * 0.15) && hero.y > wallY1 && hero.y < wallY2) y += 1;
-	else if (hero.y + HH > round(LCD_Y * 0.85) && hero.y > wallY1 && hero.y < wallY2) y -= 1;
+  // bool l = false, r = false, u = false, d = false;
+	if (hero.x < round(LCD_X * 0.20)) x += 1; // ### fix the && of all of these
+	if (hero.x + HW > round(LCD_X * 0.80)) x -= 1;
+	if (hero.y < round(LCD_Y * 0.20)) y += 1;
+	if (hero.y + HH > round(LCD_Y * 0.80)) y -= 1;
   screenX += x; screenY += y;
   if (screenX <= -33 || screenX >= 33) x = 0; // #### DEBATABLY WORKING
   if (screenY <= -21 || screenY >= 21) y = 0;
 	moveAll(x, y);
 }
 
-char printArray[20];
 
-// Debatable wall generator.
+
+// Random wall generator which works by added
+// each X & Y location the sprite takes up and
+// checking if these positions have already been filled.
 bool wallShiz(Sprite sprite1, int i, int gap) {
 	for (int a = sprite1.x - gap; a < sprite1.x + sprite1.width + gap; a++) {
 		for (int i = 0; i <= sizeof(wallXCoords); i++) {
-      // send_str(PSTR("TESTING XX\r\n"));
 			if (a == wallXCoords->val) {
         send_str(PSTR("X COLL\r\n"));
-        for (int a = sprite1.y - gap; a < sprite1.y + sprite1.height + gap; a++) {
-          // send_str(PSTR("TESTING YYY\r\n"));
+        for (int b = sprite1.y - gap; b < sprite1.y + sprite1.height + gap; b++) {
           for (int i = 0; i <= sizeof(wallYCoords); i++) {
-            if (a == wallYCoords->val) {
+            if (b == wallYCoords->val) {
               send_str(PSTR("X & Y COLL MATE\r\n"));
               return true;
             } wallYCoords = wallYCoords->next;
           }
         }
       }
-      // send_str(PSTR("LEZ GO NEXT\r\n"));
       wallXCoords = wallXCoords->next;
     }
 	}
   send_str(PSTR("APPENDING\r\n"));
   for (int a = sprite1.x - gap; a < sprite1.x + sprite1.width + gap; a++) {
-    // insertatend(a);
     wallXCoords->next->val = a;
     wallXCoords->next = NULL;
   }
   for (int a = sprite1.y - gap; a < sprite1.y + sprite1.height + gap; a++) {
-    // insertatend(a);
     wallYCoords->next->val = a;
     wallYCoords->next = NULL;
   }
@@ -439,7 +436,7 @@ void wallInit(void) {
   send_str(PSTR("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n"));
   sprintf(printArray, "WALL AMOUNT = %d\r\n", wallAm);
   usb_serial_send(printArray);
-  wallAm = 2;
+  wallAm = 6;
 	int x, y;
 	// int drawnWall = 0;
   int gap = 5;
@@ -453,7 +450,7 @@ void wallInit(void) {
 			y = rand() % wallY2 + (wallY1 * 1);
       y += wallY1;
 			int direction = rand() % 10;
-			if (direction >= 5) { // Vertical direction.
+			if (direction > 5) { // Vertical direction.
         send_str(PSTR("VERT.\r\n"));
 				sprite_init(&wall[i], x, y, VWW, VWH, vertWallBitmap);
 				if (wallShiz(wall[i], i, gap)) valid = false;
@@ -462,6 +459,7 @@ void wallInit(void) {
 				sprite_init(&wall[i], x, y, HWW, HWH, horWallBitmap);
 				if (wallShiz(wall[i], i, gap)) valid = false;
 			}
+      // if (spriteCollision(wall[i])) valid = false;
 		} while (!valid);
     send_str(PSTR("ACCCCCCCCCCCCCTTTTTTTTTTTTUALLLY WORKED WHAT\r\n"));
 	}
@@ -575,6 +573,7 @@ void enemyInit(void) { ///### inits broken, fix later
   int x, y;
   // srand(minutes * seed - seconds);
   enemyAm = rand() % 6;
+  enemyAm = 2;
   for (int i = 0; i < enemyAm; i++) {
     bool valid = false;
     sprintf(printArray, "ENEMY no. = %d\r\n", i);
@@ -583,14 +582,15 @@ void enemyInit(void) { ///### inits broken, fix later
       x = rand() % (wallX2 + (wallX1 + 8 * 1)); y = rand() % (wallY2 + (wallY1 * 1));
       x += wallX1; y += wallY1;
       sprite_init(&enemy[i], x, y, EW, EH, enemyBitmap);
-      if (!spriteCollision(enemy[i])) valid = true;
+      if (!spriteCollision(enemy[i])) break;
+      send_str(PSTR("FAILED\r\n"));
     }
   }
 }
 
 
 // Initialises all the treasure sprites.
-void treasureInit(void) { ///### inits broken, fix later
+void treasureInit(void) {
   int x, y;
   // srand(minutes * seed - seconds);
   treasureAm = rand() % 6;
@@ -602,30 +602,60 @@ void treasureInit(void) { ///### inits broken, fix later
       x = rand() % (wallX2 + (wallX1 + 8 * 1)); y = rand() % (wallY2 + (wallY1 * 1));
       x += wallX1; y += wallY1;
       sprite_init(&treasure[i], x, y, 8, 3, treasureBitmap);
-        if (!spriteCollision(treasure[i])) valid = true;
+      if (!spriteCollision(treasure[i])) break;
+      send_str(PSTR("FAILED\r\n"));
     }
+  }
+}
+
+void doorInit(void) {
+  int x, y;
+  srand(minutes * seed * seconds);
+  bool valid = false;
+  while (!valid) {
+    x = rand() % (wallX2 + (wallX1 + 8 * 1)); y = rand() % (wallY2 + (wallY1 * 1));
+    x += wallX1; y += wallY1;
+    sprite_init(&door, x, y, DW, DH, doorBitmap);
+    if (!spriteCollision(door)) break;
+    send_str(PSTR("FAILED\r\n"));
+  }
+}
+
+void keyInit(void) {
+  int x, y;
+  srand(minutes * seed - seconds);
+  bool valid = false;
+  while (!valid) {
+    x = rand() % (wallX2 + (wallX1 + 8 * 1)); y = rand() % (wallY2 + (wallY1 * 1));
+    x += wallX1; y += wallY1;
+    sprite_init(&key, x, y, KW, KH, keyBitmap);
+    if (!spriteCollision(key)) break;
+    send_str(PSTR("FAILED\r\n"));
   }
 }
 
 
 // Initialises all the sprites on the map.
 void mapInit(void) {
-	for (int i = 0; i < 50; i++) {
-		XYarray[i] = rand() % 40;
-	}
-	sprite_init(&door, XYarray[8], XYarray[43], DW, DH, doorBitmap);
-	sprite_init(&key, XYarray[2], XYarray[33], KW, KH, keyBitmap);
-  send_str(PSTR("WALL\r\n"));
-	wallInit();
-  send_str(PSTR("HERO\r\n"));
-	initHero();
+	// for (int i = 0; i < 50; i++) {
+	// 	XYarray[i] = rand() % 40;
+	// }
+	// sprite_init(&door, 90, 8, DW, DH, doorBitmap);
+	// sprite_init(&key, 20, 0, KW, KH, keyBitmap);
+  send_str(PSTR("DOOR\r\n"));
+  doorInit();
+  send_str(PSTR("KEY\r\n"));
+  keyInit();
   send_str(PSTR("TREASURE\r\n"));
   treasureInit();
   send_str(PSTR("ENEMY\r\n"));
   enemyInit();
+  send_str(PSTR("WALL\r\n"));
+	wallInit();
+  send_str(PSTR("HERO\r\n"));
+	initHero();
   send_str(PSTR("DEFENCE\r\n"));
   defenceInit();
-  send_str(PSTR("MAP is INITIALISED\r\n"));
 	mapInitialised = true;
 }
 
@@ -643,7 +673,7 @@ void drawLvl(void) {
   else {
 		if (!mapInitialised) mapInit();
     enemyMovement();
-		for (int i = 0; i < wallAm; i++) sprite_draw(&wall[i]);
+		for (int i = 0; i < 5; i++) sprite_draw(&wall[i]); // ###
 		for (int i = 0; i < treasureAm; i++) sprite_draw(&treasure[i]);
 		sprite_draw(&door); sprite_draw(&key);
     if (!shieldTrailed) sprite_draw(&shield);
@@ -694,7 +724,7 @@ void loadingScreen(void) {
 // Display Menu during gameplay.
 void displayMenu(void) {
 	clear_screen();
-	char lev[50]; char liv[50]; char scor[50]; char timer[20];
+	char lev[20]; char liv[20]; char scor[20]; char timer[20];
 	sprintf(lev, "Level: %d", level); draw_string(0, 0, lev, FG_COLOUR);
 	sprintf(liv, "Lives: %d", lives); draw_string(0, 10, liv, FG_COLOUR);
 	sprintf(scor, "Score: %d", score); draw_string(0, 20, scor, FG_COLOUR);
@@ -813,6 +843,8 @@ void moveHero(void) {
     else {
       lives -= 1;
       send_str(PSTR("An enemy has killed the hero.\r\n"));
+      initHero(); // ###
+      screenX = 0; screenY = 0;
       // mapInitialised = false;
       // destroyGame(); // ### FIX AFTER DEBUGGA
     }
@@ -835,6 +867,7 @@ void moveHero(void) {
 		hero.y += dy;
 		hero.x += dx;
 	}
+
 	scrollMap();
 	staticMap();
   sprite_draw(&hero);
