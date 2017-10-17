@@ -1,6 +1,3 @@
-#include <graphics.h>
-#include <sprite.h>
-
 // Bitmaps. (L x W || Row x Column)
 // 16 x 8
 uint8_t heroBitmap[] = {
