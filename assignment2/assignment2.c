@@ -56,22 +56,26 @@ float dx = 0;
 float dy = 0;
 int dxdy[1];
 // Player.
-uint16_t level = 1, lives = 3, score = 0;
+uint16_t level = 2, lives = 3;
+int score = 0;
 // Timer.
 uint16_t seconds = 0, minutes = 0;
 uint16_t totalSeconds = 0, totalMinutes = 0;
 double interval = 0;
 // Sprite amounts.
-uint8_t enemyAm = 0, treasureAm = 0, wallAm = 2;
+uint8_t enemyAm = 0, treasureAm = 0, wallAm = 8;
 // Gameplay / Collisions.
-uint8_t herox, heroy;
 uint8_t keyx, keyy;
+// Map grid.
 uint8_t grid[6][2] = { // 1.5, 46.5 Y
   {-8, -7}, {-8, 31}, // Left (Top | Bottom)
   {42, -6}, {42, 32}, // Mid (Top | Bottom)
   {83, -4}, {83, 33}  // Right (Top | Bottom)
 };
-uint8_t screenX = 0, screenY = 0;
+int position[5] = {1, 2, 3, 4, 5}; // Grid position
+// Camera position.
+int screenX = 0, screenY = 0;
+// Gameplay bools.
 bool keyColl = false;
 bool activated = false;
 bool lvlInit = false;
@@ -88,7 +92,7 @@ bool bowTrailed = false;
 bool bombTrailed = false;
 bool shieldTrailed = false;
 bool crosshairInit = false;
-// Game engine.
+// Button press objects.
 uint16_t closedCon = 0;
 uint16_t openCon = 0;
 bool resetGame = false;
@@ -99,6 +103,7 @@ int hx, hy, cx, cy;
 char printArray[20];
 // Seed generator.
 int seed = 2313;
+// Map border locations.
 int wallX1 = -33, wallX2 = 117;
 int wallY1 = -21, wallY2 = 69;
 
@@ -112,7 +117,6 @@ Sprite arrow;
 void initHero(void) {
 	uint8_t x = LCD_X / 2 - HW / 2;
 	uint8_t y = LCD_Y / 2;
-  herox = x; heroy = y;
 	sprite_init(&hero, x, y, HW, HH, heroBitmap);
 }
 
@@ -154,7 +158,7 @@ void usb_serial_send(char * message) {
 // perimeter is necessary.
 bool gapCollision(Sprite sprite1, Sprite sprite2, int gap) {
   // Sprite 1.
-  uint8_t spr1Bottom = round(sprite1.x) + sprite1.height;
+  int spr1Bottom = round(sprite1.x) + sprite1.height;
   uint8_t spr1Top = round(sprite1.y);
   uint8_t spr1Left = round(sprite1.x) - gap;
   uint8_t spr1Right = round(sprite1.x) + sprite1.width + gap;
@@ -203,28 +207,19 @@ bool yCollision(Sprite sprite1, Sprite sprite2){
 // Checking for all sprite collisions.
 bool spriteCollision(Sprite sprite) {
   for (int i = 0; i < enemyAm; i++) {
-    if (xCollision(sprite, enemy[i]) && yCollision(sprite, enemy[i])) {send_str(PSTR("FAILED\r\n")); return true;};
+    if (xCollision(sprite, enemy[i]) && yCollision(sprite, enemy[i])) return true;
   }
-  send_str(PSTR("passed enemy\r\n"));
   for (int i = 0; i < treasureAm; i++) {
-    if (xCollision(sprite, treasure[i]) && yCollision(sprite, treasure[i])) {send_str(PSTR("FAILED\r\n")); return true;}
+    if (xCollision(sprite, treasure[i]) && yCollision(sprite, treasure[i])) return true;
   }
-  send_str(PSTR("passed treasure\r\n"));
   for (int i = 0; i < wallAm; i++) {
-    if (xCollision(sprite, wall[i]) && yCollision(sprite, wall[i])) {send_str(PSTR("FAILED\r\n")); return true;}
+    if (xCollision(sprite, wall[i]) && yCollision(sprite, wall[i])) return true;
   }
-  send_str(PSTR("passed wall\r\n"));
-  if (xCollision(sprite, bomb) && yCollision(sprite, bomb)) {send_str(PSTR("FAILED\r\n")); return true;}
-  send_str(PSTR("passed bomb\r\n"));
-  if (xCollision(sprite, bow) && yCollision(sprite, bow)) {send_str(PSTR("FAILED\r\n")); return true;};
-  send_str(PSTR("passed bow\r\n"));
-  if (xCollision(sprite, shield) && yCollision(sprite, shield)) {send_str(PSTR("FAILED\r\n")); return true;}
-  send_str(PSTR("passed shield\r\n"));
-  if (xCollision(sprite, key) && yCollision(sprite, key)) {send_str(PSTR("FAILED\r\n")); return true;}
-  send_str(PSTR("passed key\r\n"));
-  if (xCollision(sprite,door) && yCollision(sprite, door)) {send_str(PSTR("FAILED\r\n")); return true;}
-  send_str(PSTR("passed door\r\n"));
-  send_str(PSTR("PASSED COLLISIONS\r\n"));
+  if (xCollision(sprite, bomb) && yCollision(sprite, bomb)) return true;
+  if (xCollision(sprite, bow) && yCollision(sprite, bow)) return true;
+  if (xCollision(sprite, shield) && yCollision(sprite, shield)) return true;
+  if (xCollision(sprite, key) && yCollision(sprite, key)) return true;
+  if (xCollision(sprite,door) && yCollision(sprite, door)) return true;
   return false;
 }
 
@@ -234,7 +229,7 @@ void enemyMovement(void) {
 	float enemySpeed = 0.1;
   if (level == 1) enemyAm = 1;
 	for (int i = 0; i < enemyAm; i++) {
-    for (int a = 0; a < 12; a++) {
+    for (int a = 0; a < wallAm; a++) {
       if (xCollision(enemy[i], wall[a]) && yCollision(enemy[i], wall[a])) {
         enemySpeed = -0.2;
       }
@@ -270,15 +265,14 @@ void explosion(void) {
     if (gapCollision(bomb, enemy[i], 3)) {
       spriteMagic(enemy[i]);
       enemy[i].x = -300; enemy[i].y = -300;
-      enemy[i].is_visible = 0;
       score += 10;
       send_str(PSTR("An enemy has died in a horrific explosion.\n"));
       usb_serial_send(printArray);
     }
   }
-  // bomb.x = -200; bomb.y = -200;
   // Destroy bomb.
   spriteMagic(bomb);
+  bombTrailed = false;
   // Flicker LEDs
   SET_BIT(PORTB, 2); _delay_ms(250); CLEAR_BIT(PORTB, 2);
   SET_BIT(PORTB, 3); _delay_ms(250); CLEAR_BIT(PORTB, 3);
@@ -290,15 +284,16 @@ void explosion(void) {
 // Shooting mechanism.
 void sendIt(void) {
   int sx = 0; int sy = 0;
-  int shotSpeed = 1;
+  uint8_t shotSpeed = 1;
   // Utilised so if a projectile is shot, it won't trace the moving crosshair.
   if (!shot) {
     hx = hero.x; hy = hero.y;
-    cx = crosshair.x; cy = crosshair.y;
+    cx = crosshair.x + 4; cy = crosshair.y + 4;
   }
   if (!crosshairInit) sprite_init(&crosshair, LCD_X * 0.5, LCD_Y * 0.5, 8, 8, crosshairBitmap);
   // User input.
-  if ((BIT_IS_SET(PINF, 6) || BIT_IS_SET(PINF, 5)) && shot == false && (bombTrailed || arrows > 0)) {
+  if ((BIT_IS_SET(PINF, 6) || BIT_IS_SET(PINF, 5)) && shot == false && (bombTrailed || arrows > 0) &&
+  !(xCollision(hero, crosshair) && yCollision(hero, crosshair))) {
     shot = true;
     // Checks in which direction the crosshair is from player.
     if (cx < hx) sx = hx - 5 - 2; // 2 being the shot's width.
@@ -359,6 +354,7 @@ void sendIt(void) {
         for (int i = 0; i < 6; i++) { // 6 being enemyAm - 1
           if (gapCollision(arrow, enemy[i], 1)) {
             spriteMagic(enemy[i]);
+            enemy[i].x = -300; enemy[i].y = -300;
             score += 10;
             send_str(PSTR("An enemy has been shot till death by the hero.\n"));
           }
@@ -458,7 +454,7 @@ int randX(void) {
 
 // Produces random y value between game size.
 int randY(void) {
-  seed += 1531;
+  seed += 283;
   int y = rand() % (wallY2 + (wallY1 * 1));
   y += wallY1; //###
   return y;
@@ -479,39 +475,29 @@ void shuffle(int *array, size_t n) {
 }
 
 
-int position[5] = {1, 2, 3, 4, 5}; // Grid position
 // Psuedo random wall generation.
 void wallInit(void) {
   // Initialising random wall formations.
-  seed *= interval;
-  uint8_t hw = 10; // Half wall size.
-  // int posN[6] = shuffle(position, sizeof(position));
+  seed *= (interval + seconds * 8.5);
+  int hw = 10; // Half wall size.
+  int pos = 0;
   shuffle(position, sizeof(position));
-  for (int i = 0; i < 7; i++) {
-    sprintf(printArray, "position no. = %d\r\n", position[i]);
-    usb_serial_send(printArray);
-  }
-  for (uint8_t i = 0; i <= 8; i += 2){
-    uint8_t pos = 0;
-    uint8_t gridX = grid[position[pos]][0]; uint8_t gridY = grid[position[pos]][1];
-    int chained[6][4] = { // x1, y1, x1, y1 (Vertical, Horizontal).
+  for (int i = 0; i <= wallAm; i += 2){
+    int gridX = grid[position[pos]][0]; int gridY = grid[position[pos]][1];
+    int chained[11][4] = { // x1, y1, x1, y1 (Vertical, Horizontal).
       {gridX - 12, gridY - 5, gridX - 12, gridY + hw - 5}, // T shape (90 D counter clockwise).
-      {gridX - hw, gridY, gridX - hw, gridY}, // L shape (flipped).
       {gridX - hw, gridY, gridX - hw + 3, gridY + 22}, // L shape.
+      {gridX, gridY - 8, 200, 200},
       {gridX, gridY, gridX - 11, gridY}, // T shape.
+      {200, 200, gridX, gridY + 2},
+      {gridX - hw, gridY, gridX - hw, gridY}, // L shape (flipped).
       {gridX + hw + 2, gridY, gridX - hw, gridY}, // L shape (upside down).
       {gridX, gridY, gridX, gridY + 11},
-      // {},
-      // {},
-      // {},
-      // {},
-      // {},
-      // {},
-      // {},
+      {gridX, gridY, 200, 200},
+      {200, 200, gridX - 8, gridY},
     };
-    uint8_t x1 = chained[pos][0], y1 = chained[pos][1];
-    uint8_t x2 = chained[pos][2], y2 = chained[pos][3];
-    shuffle(*chained, 5);
+    int x1 = chained[pos][0], y1 = chained[pos][1];
+    int x2 = chained[pos][2], y2 = chained[pos][3];
     sprite_init(&wall[i], x1, y1, VWW, VWH, vertWallBitmap);
     sprite_init(&wall[i + 1], x2, y2, HWW, HWH, horWallBitmap);
     pos++;
@@ -521,38 +507,25 @@ void wallInit(void) {
 
 // Initialises defence items.
 void defenceInit(void) {
-  // bool valid = false;
+  bool valid = false;
   int gen, x, y;
   // Randomising both the position and chance of spawn(30%).
   gen = rand() % 99;
-  gen = 29;
-  if (gen <= 29) {
-    // while (!valid) {
-      x = randX(); y = randY();
-      sprite_init(&bow, x, y, 8, 3, bowBitmap);
-      // if (!spriteCollision(bow)) valid = true;
-      // valid = true;
-    // }
-  }
-  // valid = false;
-  gen = rand() % 100;
-  gen = 29;
-  if (gen <= 29) {
-    // while (!valid) {
-      x = randX(); y = randY();
-      sprite_init(&bomb, x, y, 6, 4, bombBitmap);
-      // if (!spriteCollision(bomb)) valid = true;
-    //   valid = true;
-    // }
-  }
-  // valid = false;
-  // gen = rand() % 100;
-  if (gen <= 29) {
-    // while (!valid) {
+  if (gen <= 100) {
     x = randX(); y = randY();
-      sprite_init(&shield, x, y, 8, 4, shieldBitmap);
-  //     if (!spriteCollision(shield)) valid = true;
-  //   }
+    sprite_init(&bow, x, y, 8, 3, bowBitmap);
+  }
+  valid = false;
+  gen = rand() % 99;
+  if (gen <= 29) {
+    x = randX(); y = randY();
+    sprite_init(&bomb, x, y, 6, 4, bombBitmap);
+  }
+  valid = false;
+  gen = rand() % 99;
+  if (gen <= 29) {
+    x = randX(); y = randY();
+    sprite_init(&shield, x, y, 8, 4, shieldBitmap);
   }
 }
 
@@ -561,20 +534,11 @@ void defenceInit(void) {
 void enemyInit(void) {
   int x, y;
   seed *= 2313 * interval;
-  enemyAm = rand() % 4;
-  enemyAm++;
+  enemyAm = 1 + (rand() % 4);
   for (int i = 0; i < enemyAm; i++) {
-    bool valid = false;
     seed *= 2313 * interval;
-    sprintf(printArray, "ENEMY no. = %d\r\n", i);
-    usb_serial_send(printArray);
-    while (!valid) {
-      x = randX(); y = randY();
-      sprite_init(&enemy[i], x, y, EW, EH, enemyBitmap);
-      if (!spriteCollision(enemy[i]))
-       valid = true;
-      send_str(PSTR("FAILED\r\n"));
-    }
+    x = randX(); y = randY();
+    sprite_init(&enemy[i], x, y, EW, EH, enemyBitmap);
   }
 }
 
@@ -582,59 +546,38 @@ void enemyInit(void) {
 // Initialises all the treasure sprites.
 void treasureInit(void) {
   int x, y;
-  treasureAm = rand() % 6;
+  treasureAm = rand() % 5;
   for (int i = 0; i < treasureAm; i++) {
-    bool valid = false;
-    while (!valid) {
-      sprintf(printArray, "TREASURE no. = %d\r\n", i);
-      usb_serial_send(printArray);
-      x = randX(); y = randY();
-      sprite_init(&treasure[i], x, y, 8, 3, treasureBitmap);
-      if (!spriteCollision(treasure[i])) valid = true;
-      send_str(PSTR("FAILED\r\n"));
-    }
+    x = randX(); y = randY();
+    sprite_init(&treasure[i], x, y, 8, 3, treasureBitmap);
   }
 }
 
 
 // Initialises door sprite.
 void doorInit(void) {
-  uint8_t x = grid[0][0], y = grid[0][1];
+  int x = -0, y = -10;
   sprite_init(&door, x, y, DW, DH, doorBitmap);
 }
-
 
 
 // Initialises key sprite.
 void keyInit(void) {
   int x, y;
-  // bool valid = false;
-  // while (!valid) {
-    x = randX(); y = randY();
-    sprite_init(&key, x, y, KW, KH, keyBitmap);
-  //   if (!spriteCollision(key)) break;
-  //   send_str(PSTR("FAILED\r\n"));
-  // }
+  x = randX(); y = randY();
+  sprite_init(&key, x, y, KW, KH, keyBitmap);
 }
 
 
 // Initialises all the sprites on the map.
 void mapInit(void) {
-  send_str(PSTR("MAP INITIALIZATION\r\n"));
-  send_str(PSTR("WALL\r\n"));
   wallInit();
-  send_str(PSTR("DOOR\r\n"));
   doorInit();
-  send_str(PSTR("KEY\r\n"));
   keyInit();
-  send_str(PSTR("TREASURE\r\n"));
   treasureInit();
-  send_str(PSTR("ENEMY\r\n"));
   enemyInit();
-  send_str(PSTR("HERO\r\n"));
 	initHero();
-  send_str(PSTR("DEFENCE\r\n"));
-  defenceInit(); // ###
+  defenceInit();
 	mapInitialised = true;
 }
 
@@ -644,22 +587,19 @@ void drawLvl(void) {
 	// Static level 1 sprites.
   if (level == 1) {
 		if (!lvlInit) level1Init();
-    sprite_draw(&tower); sprite_draw(&door); sprite_draw(&key);
-		enemyMovement();
+    sprite_draw(&tower);
   }
 	// Randomly generated level sprites.
   else {
 		if (!mapInitialised) mapInit();
-    enemyMovement();
-		for (int i = 0; i < 12; i++) sprite_draw(&wall[i]); // ###
+		for (int i = 0; i <= wallAm; i++) sprite_draw(&wall[i]); // ###
 		for (int i = 0; i < treasureAm; i++) sprite_draw(&treasure[i]);
-		sprite_draw(&door);
-    sprite_draw(&key);
     if (!shieldTrailed) sprite_draw(&shield);
     if (!bowTrailed) sprite_draw(&bow);
     if (!bombTrailed) sprite_draw(&bomb);
-    send_str(PSTR("BOOOTYYY\r\n"));
   }
+  sprite_draw(&door); sprite_draw(&key);
+  enemyMovement();
 }
 
 
@@ -719,6 +659,13 @@ void displayMenu(void) {
 }
 
 
+// Respawn hero.
+void respawnHero(void) {
+  int x = (randX() % 40) + 24; int y = (randY() % 20) + 15;
+  sprite_init(&hero, x, y, HW, HH, heroBitmap);
+}
+
+
 // User input from PewPew switches.
 void userControlls(void) {
 	if (BIT_IS_SET(PIND, 1)){ // Up switch.
@@ -761,7 +708,7 @@ void userControlls(void) {
 }
 
 
-// Hero movement.
+// Character movement.
 void moveHero(void) {
 	// Useful variables.
 	float xx = dx; float yy = dy;
@@ -773,25 +720,25 @@ void moveHero(void) {
 	dx = dxdy[0];
 	dy = dxdy[1];
 	// Array sprite Collisions.
-	for (int i = 0; i < enemyAm; i++) {
-    if (xCollision(hero, enemy[i])) {
-      if (yCollision(hero, enemy[i])) {
-        enColl = true;
-      }
+	for (uint8_t i = 0; i < enemyAm; i++) {
+    if (xCollision(hero, enemy[i]) && yCollision(hero, enemy[i])) {
+      enColl = true;
     }
 	}
-  for (int i = 0; i < 6; i++) {
-    if (gapCollision(hero, treasure[i], 1)) {
+  for (uint8_t i = 0; i < 6; i++) {
+    if (xCollision(hero, treasure[i]) && yCollision(hero, treasure[i])) {
       spriteMagic(treasure[i]);
+      treasure[i].y = 300;
       score += 10;
     }
   }
-  for (int i = 0; i < 12; i++) {
+  for (int i = 0; i < wallAm; i++) {
     if (xCollision(hero, wall[i]) && yCollision(hero, wall[i])) {
-      hero.y -= yy;
-			hero.x -= xx;
+      hero.y -= yy * 3;
+			hero.x -= xx * 3;
 			dx = 0;
 			dy = 0;
+      send_str(PSTR("WALLI COLL\r\n"));
     }
   }
   if (level > 1) {
@@ -847,7 +794,7 @@ void moveHero(void) {
       bowTrailed = false; keyColl = false;
       lives -= 1;
       send_str(PSTR("An enemy has killed the hero.\r\n"));
-      initHero();
+      respawnHero();
       screenX = 0; screenY = 0;
     }
 	}
@@ -871,7 +818,6 @@ void moveHero(void) {
 		hero.x += dx;
 	}
   if (keyColl) spriteTrail(key);
-
 	scrollMap();
 	staticMap();
   sprite_draw(&hero);
@@ -978,9 +924,11 @@ void initControls(void) {
   SET_BIT(DDRB, 3);
 }
 
+
 // Setup (ran on start).
 void setup(void) {
-  srand(seed * seconds * level / minutes);
+  // Seed generator.
+  srand(seed * seconds * level * minutes);
   // Set CPU speed.
   set_clock_speed(CPU_8MHz);
   // Set Timer 0 to overflow approx 122 times per second.
@@ -1040,13 +988,13 @@ void gameOverScreen(void) {
 void process(void) {
 	if (lives > 0) {
 		clear_screen();
-		drawLvl();
     if (bombTrailed || bowTrailed) crosshairMovement();
+    drawLvl();
 		moveHero();
 		show_screen();
 	}
 	else {
-    send_str(PSTR("Game ova red nova.\n"));
+    send_str(PSTR("Game over\n"));
 		gameOverScreen();
 	}
 }
