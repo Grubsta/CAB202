@@ -1,4 +1,5 @@
-// ANSI Tower for a Teensy utilising a PewPew board.
+// ANSI Tower for a Teensy utilising a PewPew board. This
+// board utilises a 84 x 48 LCD screen. Model: Nokia5110 LCD.
 #include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -42,13 +43,6 @@
 // Threshold for button presses.
 #define thresh (1000)
 
-
-// TODO : ###
-// FIX RANDOM generator
-
-// NEED TO KNOWS
-// SCREEN = 84x48
-
 // Global variables.
 // Location / movement.
 float speed = 1.0;
@@ -59,15 +53,13 @@ int dxdy[1];
 uint16_t level = 2, lives = 3;
 int score = 0;
 // Timer.
-uint16_t seconds = 0, minutes = 0;
+int seconds = 0, minutes = 0;
 uint16_t totalSeconds = 0, totalMinutes = 0;
 double interval = 0;
 // Sprite amounts.
-uint8_t enemyAm = 0, treasureAm = 0, wallAm = 8;
-// Gameplay / Collisions.
-uint8_t keyx, keyy;
+int enemyAm = 0, treasureAm = 0, wallAm = 8;
 // Map grid.
-uint8_t grid[6][2] = { // 1.5, 46.5 Y
+int grid[6][2] = { // 1.5, 46.5 Y
   {-8, -7}, {-8, 31}, // Left (Top | Bottom)
   {42, -6}, {42, 32}, // Mid (Top | Bottom)
   {83, -4}, {83, 33}  // Right (Top | Bottom)
@@ -84,10 +76,6 @@ bool mapInitialised = false;
 bool enemyInitialised = false;
 // Defense objects.
 int arrows = 5;
-bool keySpawn = false;
-bool bombSpawn = false;
-bool shieldSpawn = false;
-bool spriteTrailed = false;
 bool bowTrailed = false;
 bool bombTrailed = false;
 bool shieldTrailed = false;
@@ -478,7 +466,6 @@ void shuffle(int *array, size_t n) {
 // Psuedo random wall generation.
 void wallInit(void) {
   // Initialising random wall formations.
-  seed *= (interval + seconds * 8.5);
   int hw = 10; // Half wall size.
   int pos = 0;
   shuffle(position, sizeof(position));
@@ -490,7 +477,7 @@ void wallInit(void) {
       {gridX, gridY - 8, 200, 200},
       {gridX, gridY, gridX - 11, gridY}, // T shape.
       {200, 200, gridX, gridY + 2},
-      {gridX - hw, gridY, gridX - hw, gridY}, // L shape (flipped).
+      {gridX - 8, gridY, gridX - hw, gridY}, // L shape (flipped).
       {gridX + hw + 2, gridY, gridX - hw, gridY}, // L shape (upside down).
       {gridX, gridY, gridX, gridY + 11},
       {gridX, gridY, 200, 200},
@@ -563,7 +550,7 @@ void doorInit(void) {
 
 // Initialises key sprite.
 void keyInit(void) {
-  int x, y;
+  int x, y; seed += 74;
   x = randX(); y = randY();
   sprite_init(&key, x, y, KW, KH, keyBitmap);
 }
@@ -630,8 +617,7 @@ void destroyGame(void) {
 	spriteMagic(hero); spriteMagic(key); spriteMagic(door);
   spriteMagic(bow); spriteMagic(bomb); spriteMagic(shield);
 	mapInitialised = false; lvlInit = false; keyColl = false;
-  keySpawn = false; bombSpawn = false; shieldSpawn = false;
-  spriteTrailed = false; bowTrailed = false; bombTrailed = false;
+  bowTrailed = false; bombTrailed = false;
   shieldTrailed = false; arrows = 5;
 }
 
@@ -768,9 +754,6 @@ void moveHero(void) {
 	if (xCollision(hero, key) && yCollision(hero, key)) {
     send_str(PSTR("The hero has retrieved the key.\r\n"));
 		keyColl = true;
-    spriteTrailed = true;
-		key.x = 150;
-		key.y = 150;
 	}
 	if (level == 1) {
 		if (gapCollision(hero, tower, 0)) {
@@ -783,15 +766,15 @@ void moveHero(void) {
 	// Checking for collisions.
 	if (enColl) {
     if (shieldTrailed){
-      hero.y -= yy * 3;
-      hero.x -= xx * 3;
+      hero.y -= yy * 7;
+      hero.x -= xx * 7;
       shieldTrailed = false;
       send_str(PSTR("An enemy has destroyed the heros shield. -1 protection."));
       shield.x = 1000;
       shield.y = 1000;
     }
     else {
-      bowTrailed = false; keyColl = false;
+      bowTrailed = false; bombTrailed = false; keyColl = false;
       lives -= 1;
       send_str(PSTR("An enemy has killed the hero.\r\n"));
       respawnHero();
@@ -835,10 +818,6 @@ void resetVars(void) {
   wallInitialised = false;
   mapInitialised = false;
   enemyInitialised = false;
-  keySpawn = false;
-  bombSpawn = false;
-  shieldSpawn = false;
-  spriteTrailed = false;
   bowTrailed = false;
   bombTrailed = false;
   shieldTrailed = false;
