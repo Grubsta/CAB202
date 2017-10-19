@@ -56,10 +56,10 @@ float dx = 0;
 float dy = 0;
 int dxdy[1];
 // Player.
-int level = 2, lives = 3, score = 0;
+uint16_t level = 1, lives = 3, score = 0;
 // Timer.
-int seconds = 0, minutes = 0;
-int totalSeconds = 0, totalMinutes = 0;
+uint16_t seconds = 0, minutes = 0;
+uint16_t totalSeconds = 0, totalMinutes = 0;
 double interval = 0;
 // Sprite amounts.
 uint8_t enemyAm = 0, treasureAm = 0, wallAm = 2;
@@ -71,7 +71,7 @@ uint8_t grid[6][2] = { // 1.5, 46.5 Y
   {42, -6}, {42, 32}, // Mid (Top | Bottom)
   {83, -4}, {83, 33}  // Right (Top | Bottom)
 };
-int screenX = 0, screenY = 0;
+uint8_t screenX = 0, screenY = 0;
 bool keyColl = false;
 bool activated = false;
 bool lvlInit = false;
@@ -87,7 +87,6 @@ bool spriteTrailed = false;
 bool bowTrailed = false;
 bool bombTrailed = false;
 bool shieldTrailed = false;
-bool keyTrailed = false;
 bool crosshairInit = false;
 // Game engine.
 uint16_t closedCon = 0;
@@ -156,7 +155,7 @@ void usb_serial_send(char * message) {
 bool gapCollision(Sprite sprite1, Sprite sprite2, int gap) {
   // Sprite 1.
   uint8_t spr1Bottom = round(sprite1.x) + sprite1.height;
-  uint8_t spr1Top = round(sprite1.y); /////##################
+  uint8_t spr1Top = round(sprite1.y);
   uint8_t spr1Left = round(sprite1.x) - gap;
   uint8_t spr1Right = round(sprite1.x) + sprite1.width + gap;
   // Sprite 2.
@@ -174,35 +173,6 @@ bool gapCollision(Sprite sprite1, Sprite sprite2, int gap) {
 }
 
 
-// Checking for all sprite collisions.
-bool spriteCollision(Sprite sprite) {
-  for (int i = 0; i < enemyAm; i++) {
-    if (gapCollision(sprite, enemy[i], 1)) {send_str(PSTR("FAILED\r\n")); return true;};
-  }
-  send_str(PSTR("passed enemy\r\n"));
-  for (int i = 0; i < treasureAm; i++) {
-    if (gapCollision(sprite, treasure[i], 1)) {send_str(PSTR("FAILED\r\n")); return true;}
-  }
-  send_str(PSTR("passed treasure\r\n"));
-  for (int i = 0; i < wallAm; i++) {
-    if (gapCollision(sprite, wall[i], 1)) {send_str(PSTR("FAILED\r\n")); return true;}
-  }
-  send_str(PSTR("passed wall\r\n"));
-  if (gapCollision(sprite, bomb, 1)) {send_str(PSTR("FAILED\r\n")); return true;}
-  send_str(PSTR("passed bomb\r\n"));
-  if (gapCollision(sprite, bow, 1)) {send_str(PSTR("FAILED\r\n")); return true;};
-  send_str(PSTR("passed bow\r\n"));
-  if (gapCollision(sprite, shield, 1)) {send_str(PSTR("FAILED\r\n")); return true;}
-  send_str(PSTR("passed shield\r\n"));
-  if (gapCollision(sprite, key, 1)) {send_str(PSTR("FAILED\r\n")); return true;}
-  send_str(PSTR("passed key\r\n"));
-  if (gapCollision(sprite, door, 1)) {send_str(PSTR("FAILED\r\n")); return true;}
-  send_str(PSTR("passed door\r\n"));
-  send_str(PSTR("PASSED COLLISIONS\r\n"));
-  return false;
-}
-
-
 // X-value collision detection.
 bool xCollision(Sprite sprite1, Sprite sprite2){
   // Sprite 1.
@@ -211,11 +181,8 @@ bool xCollision(Sprite sprite1, Sprite sprite2){
   // Sprite 2.
   uint8_t sprite2Left = sprite2.x;
   uint8_t sprite2Right = sprite2.x + sprite2.width;
-  // If collision is occuring.
-  // sprintf(printArray, "S1 L = %d, R = %d, S2 L = %d, R = %d r\n", sprite1Left, sprite1Right, sprite2Left, sprite2Right);
-  // usb_serial_send(printArray); //#####
   if (sprite1Left < sprite2Right && sprite1Right > sprite2Left) return true;
-  else return false; // Else return no collision.
+  else return false; // No collision.
 }
 
 
@@ -230,6 +197,35 @@ bool yCollision(Sprite sprite1, Sprite sprite2){
   // if (sprite1Bottom > sprite2Top && sprite1Top < sprite2Bottom - 2) return true;
   if (sprite1Bottom > sprite2Top && sprite1Top < sprite2Bottom) return true;
   else return false;
+}
+
+
+// Checking for all sprite collisions.
+bool spriteCollision(Sprite sprite) {
+  for (int i = 0; i < enemyAm; i++) {
+    if (xCollision(sprite, enemy[i]) && yCollision(sprite, enemy[i])) {send_str(PSTR("FAILED\r\n")); return true;};
+  }
+  send_str(PSTR("passed enemy\r\n"));
+  for (int i = 0; i < treasureAm; i++) {
+    if (xCollision(sprite, treasure[i]) && yCollision(sprite, treasure[i])) {send_str(PSTR("FAILED\r\n")); return true;}
+  }
+  send_str(PSTR("passed treasure\r\n"));
+  for (int i = 0; i < wallAm; i++) {
+    if (xCollision(sprite, wall[i]) && yCollision(sprite, wall[i])) {send_str(PSTR("FAILED\r\n")); return true;}
+  }
+  send_str(PSTR("passed wall\r\n"));
+  if (xCollision(sprite, bomb) && yCollision(sprite, bomb)) {send_str(PSTR("FAILED\r\n")); return true;}
+  send_str(PSTR("passed bomb\r\n"));
+  if (xCollision(sprite, bow) && yCollision(sprite, bow)) {send_str(PSTR("FAILED\r\n")); return true;};
+  send_str(PSTR("passed bow\r\n"));
+  if (xCollision(sprite, shield) && yCollision(sprite, shield)) {send_str(PSTR("FAILED\r\n")); return true;}
+  send_str(PSTR("passed shield\r\n"));
+  if (xCollision(sprite, key) && yCollision(sprite, key)) {send_str(PSTR("FAILED\r\n")); return true;}
+  send_str(PSTR("passed key\r\n"));
+  if (xCollision(sprite,door) && yCollision(sprite, door)) {send_str(PSTR("FAILED\r\n")); return true;}
+  send_str(PSTR("passed door\r\n"));
+  send_str(PSTR("PASSED COLLISIONS\r\n"));
+  return false;
 }
 
 
@@ -270,26 +266,24 @@ void explosion(void) {
   sprite_init(&bomb, bomX, bomY, 7, 7, bombBitmap);
   sprite_draw(&bomb);
   _delay_ms(2000);
-    for (int i = 0; i < 6; i++) {
-      if (gapCollision(bomb, enemy[i], 3)) {
-        spriteMagic(enemy[i]);
-        enemy[i].x = -300; enemy[i].y = -300;
-        enemy[i].is_visible = 0;
-        score += 10;
-        int adf = enemy[i].x; int adsf = enemy[i].y;
-        sprintf(printArray, "enemy[%d] x = %02d, enemy y = %02d\r\n", i, adf, adsf);
-        send_str(PSTR("An enemy has died in a horrific explosion.\n"));
-        usb_serial_send(printArray);
-      }
+  for (int i = 0; i < 6; i++) {
+    if (gapCollision(bomb, enemy[i], 3)) {
+      spriteMagic(enemy[i]);
+      enemy[i].x = -300; enemy[i].y = -300;
+      enemy[i].is_visible = 0;
+      score += 10;
+      send_str(PSTR("An enemy has died in a horrific explosion.\n"));
+      usb_serial_send(printArray);
     }
-    bomb.x = -200; bomb.y = -200;
-    // Destroy bomb.
-    spriteMagic(bomb);
-    // Flicker LEDs
-    SET_BIT(PORTB, 2); _delay_ms(250); CLEAR_BIT(PORTB, 2);
-    SET_BIT(PORTB, 3); _delay_ms(250); CLEAR_BIT(PORTB, 3);
-    SET_BIT(PORTB, 2); _delay_ms(250); CLEAR_BIT(PORTB, 2);
-    SET_BIT(PORTB, 3); _delay_ms(250); CLEAR_BIT(PORTB, 3);
+  }
+  // bomb.x = -200; bomb.y = -200;
+  // Destroy bomb.
+  spriteMagic(bomb);
+  // Flicker LEDs
+  SET_BIT(PORTB, 2); _delay_ms(250); CLEAR_BIT(PORTB, 2);
+  SET_BIT(PORTB, 3); _delay_ms(250); CLEAR_BIT(PORTB, 3);
+  SET_BIT(PORTB, 2); _delay_ms(250); CLEAR_BIT(PORTB, 2);
+  SET_BIT(PORTB, 3); _delay_ms(250); CLEAR_BIT(PORTB, 3);
 }
 
 
@@ -302,7 +296,7 @@ void sendIt(void) {
     hx = hero.x; hy = hero.y;
     cx = crosshair.x; cy = crosshair.y;
   }
-  if (!crosshairInit) sprite_init(&crosshair, LCD_X * 0.5, LCD_Y * 0.5, 3, 3, crosshairBitmap);
+  if (!crosshairInit) sprite_init(&crosshair, LCD_X * 0.5, LCD_Y * 0.5, 8, 8, crosshairBitmap);
   // User input.
   if ((BIT_IS_SET(PINF, 6) || BIT_IS_SET(PINF, 5)) && shot == false && (bombTrailed || arrows > 0)) {
     shot = true;
@@ -398,12 +392,10 @@ void crosshairMovement(void) {
 void level1Init(void) {
 	int midX = LCD_X / 2;
 	initHero();
-  sprite_init(&wall[0], 2, 0 - VWH, VWW, VWH, vertWallBitmap);
-  sprite_init(&wall[1], 80, 0 - VWH, VWW, VWH, vertWallBitmap);
   sprite_init(&tower, 2, 0, TW, TH, towerBitmap);
 	sprite_init(&enemy[0], LCD_X * 0.85, LCD_Y * 0.50, EW, EH, enemyBitmap);
 	sprite_init(&key, LCD_X * 0.15 - KW, LCD_Y * 0.50, KW, KH, keyBitmap);
- 	sprite_init(&door, midX - DW / 2, TH - DH, DW, DH, doorBitmap);
+ 	sprite_init(&door, midX - DW / 2, TH - DH + 1, DW, DH, doorBitmap);
 	lvlInit = true;
 }
 
@@ -444,13 +436,12 @@ void scrollMap(void) {
   else if (screenX < -33) screenX = -33;
   if (screenY > 21) screenY = 21;
   else if (screenY < -21) screenY = -21;
-  // bool l = false, r = false, u = false, d = false;
 	if (hero.x < round(LCD_X * 0.20)) x += 1;
 	if (hero.x + HW > round(LCD_X * 0.80)) x -= 1;
 	if (hero.y < round(LCD_Y * 0.20)) y += 1;
 	if (hero.y + HH > round(LCD_Y * 0.80)) y -= 1;
   screenX += x; screenY += y;
-  if (screenX <= -33 || screenX >= 33) x = 0; // #### DEBATABLY WORKING
+  if (screenX <= -33 || screenX >= 33) x = 0;
   if (screenY <= -21 || screenY >= 21) y = 0;
 	moveAll(x, y);
 }
@@ -460,6 +451,7 @@ void scrollMap(void) {
 int randX(void) {
   seed += 142;
   int x = rand() % (wallX2 + (wallX1 + 8 * 1));
+  x += wallX1;
   return x;
 }
 
@@ -468,6 +460,7 @@ int randX(void) {
 int randY(void) {
   seed += 1531;
   int y = rand() % (wallY2 + (wallY1 * 1));
+  y += wallY1; //###
   return y;
 }
 
@@ -486,14 +479,14 @@ void shuffle(int *array, size_t n) {
 }
 
 
-int position[6] = {0, 1, 2, 3, 4, 5}; // Grid position
+int position[5] = {1, 2, 3, 4, 5}; // Grid position
 // Psuedo random wall generation.
 void wallInit(void) {
   // Initialising random wall formations.
   seed *= interval;
   uint8_t hw = 10; // Half wall size.
   // int posN[6] = shuffle(position, sizeof(position));
-  shuffle(position, sizeof(position) - 1);
+  shuffle(position, sizeof(position));
   for (int i = 0; i < 7; i++) {
     sprintf(printArray, "position no. = %d\r\n", position[i]);
     usb_serial_send(printArray);
@@ -530,13 +523,12 @@ void wallInit(void) {
 void defenceInit(void) {
   // bool valid = false;
   int gen, x, y;
-  // Randomising both the position and chance of spawn.
-  gen = rand() % 100;
+  // Randomising both the position and chance of spawn(30%).
+  gen = rand() % 99;
   gen = 29;
   if (gen <= 29) {
     // while (!valid) {
       x = randX(); y = randY();
-      // x = LCD_X * 0.8; y = LCD_Y * 0.3; // ####
       sprite_init(&bow, x, y, 8, 3, bowBitmap);
       // if (!spriteCollision(bow)) valid = true;
       // valid = true;
@@ -548,7 +540,6 @@ void defenceInit(void) {
   if (gen <= 29) {
     // while (!valid) {
       x = randX(); y = randY();
-      // x = LCD_X * 0.8; y = LCD_Y * 0.6; // ####
       sprite_init(&bomb, x, y, 6, 4, bombBitmap);
       // if (!spriteCollision(bomb)) valid = true;
     //   valid = true;
@@ -567,13 +558,14 @@ void defenceInit(void) {
 
 
 // Initialises all the enemy sprites.
-void enemyInit(void) { ///### inits broken, fix later
+void enemyInit(void) {
   int x, y;
   seed *= 2313 * interval;
   enemyAm = rand() % 4;
   enemyAm++;
   for (int i = 0; i < enemyAm; i++) {
     bool valid = false;
+    seed *= 2313 * interval;
     sprintf(printArray, "ENEMY no. = %d\r\n", i);
     usb_serial_send(printArray);
     while (!valid) {
@@ -606,18 +598,6 @@ void treasureInit(void) {
 
 
 // Initialises door sprite.
-// void doorInit(void) {
-//   int x, y;
-//   bool valid = false;
-//   while (!valid) {
-//     x = randX(); y = randY();
-//     sprite_init(&door, x, y, DW, DH, doorBitmap);
-//     if (!spriteCollision(door)) break;
-//     send_str(PSTR("FAILED\r\n"));
-//   }
-// }
-
-
 void doorInit(void) {
   uint8_t x = grid[0][0], y = grid[0][1];
   sprite_init(&door, x, y, DW, DH, doorBitmap);
@@ -640,19 +620,20 @@ void keyInit(void) {
 
 // Initialises all the sprites on the map.
 void mapInit(void) {
+  send_str(PSTR("MAP INITIALIZATION\r\n"));
   send_str(PSTR("WALL\r\n"));
   wallInit();
   send_str(PSTR("DOOR\r\n"));
   doorInit();
   send_str(PSTR("KEY\r\n"));
   keyInit();
-  // send_str(PSTR("TREASURE\r\n"));
+  send_str(PSTR("TREASURE\r\n"));
   treasureInit();
-  // send_str(PSTR("ENEMY\r\n"));
+  send_str(PSTR("ENEMY\r\n"));
   enemyInit();
   send_str(PSTR("HERO\r\n"));
 	initHero();
-  // send_str(PSTR("DEFENCE\r\n"));
+  send_str(PSTR("DEFENCE\r\n"));
   defenceInit(); // ###
 	mapInitialised = true;
 }
@@ -664,7 +645,6 @@ void drawLvl(void) {
   if (level == 1) {
 		if (!lvlInit) level1Init();
     sprite_draw(&tower); sprite_draw(&door); sprite_draw(&key);
-    sprite_draw(&wall[0]); sprite_draw(&wall[1]);
 		enemyMovement();
   }
 	// Randomly generated level sprites.
@@ -712,7 +692,7 @@ void destroyGame(void) {
 	mapInitialised = false; lvlInit = false; keyColl = false;
   keySpawn = false; bombSpawn = false; shieldSpawn = false;
   spriteTrailed = false; bowTrailed = false; bombTrailed = false;
-  shieldTrailed = false; keyTrailed = false; arrows = 5;
+  shieldTrailed = false; arrows = 5;
 }
 
 
@@ -810,7 +790,7 @@ void moveHero(void) {
     if (xCollision(hero, wall[i]) && yCollision(hero, wall[i])) {
       hero.y -= yy;
 			hero.x -= xx;
-			dx = 0; ///3####
+			dx = 0;
 			dy = 0;
     }
   }
@@ -818,7 +798,7 @@ void moveHero(void) {
     if (xCollision(hero, bomb) && yCollision(hero, bomb)) {
       if (!bombTrailed) {
         bombTrailed = true; shieldTrailed = false; bowTrailed = false;
-        send_str(PSTR("The hero has located da bomb.\r\n")); //####
+        send_str(PSTR("The hero has located da bomb.\r\n"));
       }
       spriteTrail(bomb);
     }
@@ -864,9 +844,10 @@ void moveHero(void) {
       shield.y = 1000;
     }
     else {
+      bowTrailed = false; keyColl = false;
       lives -= 1;
       send_str(PSTR("An enemy has killed the hero.\r\n"));
-      initHero(); // ###
+      initHero();
       screenX = 0; screenY = 0;
     }
 	}
@@ -915,7 +896,6 @@ void resetVars(void) {
   bowTrailed = false;
   bombTrailed = false;
   shieldTrailed = false;
-  keyTrailed = false;
   crosshairInit = false;
   resetGame = true;
 }
@@ -937,7 +917,7 @@ void welcomeScreen(void) {
 		clear_screen();
 		draw_string(LCD_X / 2 - (9 / 2), LCD_Y / 2, countDwn[i], FG_COLOUR);
 		show_screen();
-		_delay_ms(333); // ### CHANGE to 3Hz frequency
+		_delay_ms(333);
 	}
 }
 
@@ -1045,7 +1025,7 @@ void gameOverScreen(void) {
 	sprintf(lev, "level: %d", level); draw_string(0, 10, lev, FG_COLOUR);
 	sprintf(scor, "score: %d", score); draw_string(0, 20, scor, FG_COLOUR);
 	draw_string(0, 40, "SW2/3 to restart", FG_COLOUR);
-	show_screen(); //### Add button press to restart gameplay.
+	show_screen();
   bool start = false;
   do {
     if (BIT_IS_SET(PINF, 6) || 	BIT_IS_SET(PINF, 5)) start = true;
