@@ -448,9 +448,11 @@ void wallInit(void) {
   int pos = 0;
   wallAm = 6;
   if (level == 2) wallAm = 12;
+  if (level == 6) wallAm = 4;
+  if (level == 11) wallAm = 10;
   int grid[4][2] = {
     {30, -6}, {30, 32},
-    {80, -6}, {80, 33}
+    {80, -6}, {80, 31}
   };
   int position[4] = {0, 1, 2, 3};
   shuffle(position, sizeof(position));
