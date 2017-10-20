@@ -192,26 +192,6 @@ bool yCollision(Sprite sprite1, Sprite sprite2){
 }
 
 
-// Checking for all sprite collisions.
-bool spriteCollision(Sprite sprite) {
-  for (int i = 0; i < enemyAm; i++) {
-    if (xCollision(sprite, enemy[i]) && yCollision(sprite, enemy[i])) return true;
-  }
-  for (int i = 0; i < treasureAm; i++) {
-    if (xCollision(sprite, treasure[i]) && yCollision(sprite, treasure[i])) return true;
-  }
-  for (int i = 0; i < wallAm; i++) {
-    if (xCollision(sprite, wall[i]) && yCollision(sprite, wall[i])) return true;
-  }
-  if (xCollision(sprite, bomb) && yCollision(sprite, bomb)) return true;
-  if (xCollision(sprite, bow) && yCollision(sprite, bow)) return true;
-  if (xCollision(sprite, shield) && yCollision(sprite, shield)) return true;
-  if (xCollision(sprite, key) && yCollision(sprite, key)) return true;
-  if (xCollision(sprite,door) && yCollision(sprite, door)) return true;
-  return false;
-}
-
-
 // Moves enemy sprite towards hero's location.
 void enemyMovement(void) {
 	float enemySpeed = 0.1;
@@ -442,7 +422,7 @@ int randX(void) {
 int randY(void) {
   seed += 32;
   int y = rand() % (wallY2 - 10 + (wallY1 + 10 * 1));
-  y += wallY1;
+  y += wallY1 + 1;
   return y;
 }
 
@@ -485,8 +465,8 @@ void wallInit(void) {
       {gridX - 8, gridY, gridX - hw, gridY}, // L shape (flipped).
       {gridX + hw + 2, gridY, gridX - hw, gridY}, // L shape (upside down).
       {gridX, gridY, gridX, gridY + 11},
-      {gridX, gridY, 200, 200},
       {200, 200, gridX - 8, gridY},
+      {gridX, gridY, 200, 200},
     };
     int x1 = chained[pos][0], y1 = chained[pos][1];
     int x2 = chained[pos][2], y2 = chained[pos][3];
@@ -805,7 +785,7 @@ void moveHero(void) {
         respawnHero();
       }
       send_str(PSTR("An enemy has killed the hero.\r\n"));
-      screenX = 0; screenY = 0;
+      // screenX = 0; screenY = 0;
     }
 	}
 	// else if (gapCollision(hero, door, 0)) {
