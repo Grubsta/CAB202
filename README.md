@@ -1,3 +1,3 @@
-# CAB202
-## Assignment 1 - Platformer for Command Line
-## Assignment 2 - ANSI Tower Defence for Teensi
+# C project Games
+## First Game - Platformer for Command Line
+## Second Game - ANSI Tower Defence for Teensy (Requires: Teensy + serial input joystick + buttons)
